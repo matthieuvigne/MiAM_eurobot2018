@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 3.0)
 
 #Configure project
-project(BBBEurobot VERSION 0.9)
+project(BBBEurobot VERSION 0.9.1)
 set(PROJECT_DESCRIPTION "C utility library to use a Beaglebone Black for Eurobot - low-level drivers and some higher level utilities")
 
 # Set compiler to arm compiler (cross-compile)
 set(CMAKE_C_COMPILER "arm-linux-gnueabihf-gcc")
 
 # Set C compiler flags.
-set(CMAKE_C_FLAGS "-std=gnu99 -Wall -fdiagnostics-color")
+set(CMAKE_C_FLAGS "-std=gnu99 -Wall -fdiagnostics-color -lpthread -lm")
 
 # Specify library content :
 # Recursively include all .c files
@@ -29,7 +29,6 @@ message(STATUS "Found armglib-2.0 v." ${ARMGLIB_VERSION})
 
 include_directories(${ARMGLIB_INCLUDE_DIRS})
 link_directories(${ARMGLIB_LIBRARY_DIRS})
-add_definitions(${ARMGLIB_CFLAGS_OTHER})
 
 target_link_libraries(${LIBRARY_NAME} ${ARMGLIB_LIBRARIES})
 

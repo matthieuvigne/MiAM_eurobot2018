@@ -8,10 +8,8 @@ set(PROJECT_DESCRIPTION "Test ADNS mouse sensor")
 set(CMAKE_C_COMPILER "arm-linux-gnueabihf-gcc")
 
 # Set C compiler flags.
-set(CMAKE_C_FLAGS "-std=gnu99 -Wall -fdiagnostics-color")
+set(CMAKE_C_FLAGS "-std=gnu99 -Wall -fdiagnostics-color -lpthread -lm")
 
-# Include source files from src directory.
-file(GLOB_RECURSE ${PROJECT_NAME}_SOURCES "src/*.c")
 
 # Use pkg-config to find external libraries : Glib (compiled for arm) and BBBEurobot.
 find_package(PkgConfig REQUIRED)
@@ -23,9 +21,13 @@ message(STATUS "Found BBBEurobot v." ${BBBLIB_VERSION})
 
 include_directories(${ARMGLIB_INCLUDE_DIRS} ${BBBLIB_INCLUDE_DIRS})
 link_directories(${ARMGLIB_LIBRARY_DIRS} ${BBBLIB_LIBRARY_DIRS})
-add_definitions(${ARMGLIB_CFLAGS_OTHER} ${BBBLIB_CFLAGS_OTHER})
+
+# Include source files from src directory.
+file(GLOB_RECURSE ${PROJECT_NAME}_SOURCES "src/*.c")
 
 # Set executable target and link libraries.
 add_executable(${PROJECT_NAME} ${${PROJECT_NAME}_SOURCES})
 target_link_libraries(${PROJECT_NAME} ${ARMGLIB_LIBRARIES} ${BBBLIB_LIBRARIES})
+
+install(TARGETS ${PROJECT_NAME} DESTINATION ".")
 
