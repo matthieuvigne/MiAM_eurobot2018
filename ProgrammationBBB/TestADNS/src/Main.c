@@ -5,18 +5,18 @@
 // Include standard libraries
 #include <stdlib.h>
 #include <stdio.h>
-// Include driver for mouse sensor.
-#include <BBBEurobot/ADNS9800Driver.h>
+// Include BBBEurobot library.
+#include <BBBEurobot/BBBEurobot.h>
 
 
 int main(int argc, char **argv)
 {
-	// Enable SPI port - this should be done elsewhere and more cleanly in the future.
-	system("echo BB-SPI1-01 > /sys/devices/bone_capemgr.9/slots");
+	// Enable serial ports to talk to the mouse sensor using SPI.
+	gpio_enableSerialPorts();
 		
 	// Initialize the SPI communication.
 	ADNS9800 mouseSensor;
-	ANDS9800_initStructure(&mouseSensor, "/dev/spidev1.0", 500000);
+	ANDS9800_initStructure(&mouseSensor, "/dev/spidev2.1", 500000);
 	printf("Starting optical sensor\n");
 	ADNS9800_performStartup(&mouseSensor);
 	printf("Reading data\n");

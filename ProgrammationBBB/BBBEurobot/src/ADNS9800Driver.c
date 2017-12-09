@@ -139,7 +139,7 @@ void ADNS9800_write_register(ADNS9800 a, unsigned char address, unsigned char da
 	int error = ioctl(a.port, SPI_IOC_MESSAGE(1), &spiCtrl);
     if(error <0)
     {
-		printf("SPI error when reading: %d\n", error);
+		printf("SPI error when writing: %d\n", error);
 	}
 	closeBus(a.port);
 	// 120us delay after read command

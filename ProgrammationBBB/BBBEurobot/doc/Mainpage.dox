@@ -1,0 +1,25 @@
+Doxygen main page
+
+/// \mainpage
+/// BBBEurobot is a library developped to ease the use of a BeagleBone Black for Eurobot.
+/// This project was started in 2017, for the participation of the team "MiAM" (a team of French alumni from two engineering schools,
+/// Ecole des Mines and Arts et Metiers) to Eurobot 2018, though it inherits from previous participations in this competition.
+///
+///
+/// This library is a general purpose library, that cover many basic needs on the Beaglebone. It purpose is to simplify the writing of
+/// higher level code, so one can focus on the robot functionalities, and not worry about implementing a particular sensor protocole.
+/// This library is written in C, and relies heavily on glib. This choice was made with one thing in many : get as many functionalities
+/// as possible, with only one dependancy to handle. It also relies on the standard system tools on Linux (for things like SPI / I2C communication
+/// for example, where ioctl is used).
+///
+///
+/// The following functionnalities are currently implemented :
+///	- Low level drivers : these file contain drivers for interfacing with sensors, actuators, and gpios.
+///		- ADNS9800Driver.h: Driver for a laser mouse sensor, used for odometry.
+///		- Ax12Driver.h: Driver for the Ax12 servomotors (not complete - recieving part not tested).
+///		- BBBGpio.h: Access to the Beaglebone GPIOs, and serial ports.
+///		- IMUDriver.h: Driver for a Pololu MiniIMU v4 sensor (L3GD20H and LSM303D).
+///		- L6470Driver.h: Driver for the L6470 stepper motor driver.
+///		- PCA9635Driver.h: Driver for the PCA9635 I2C led driver.
+///	- Generic algorithms:
+///		- KalmanFilter.h: A linear Kalman filter to estimate the orientation of the robot.

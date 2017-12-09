@@ -16,7 +16,7 @@ find_package(PkgConfig REQUIRED)
 # Look for external libraries, and link them to the project.
 pkg_search_module(ARMGLIB REQUIRED armglib-2.0>=2.47.0)
 message(STATUS "Found armglib-2.0 v." ${ARMGLIB_VERSION})
-pkg_search_module(BBBLIB REQUIRED BBBEurobot>=0.1)
+pkg_search_module(BBBLIB REQUIRED BBBEurobot>=0.9.2)
 message(STATUS "Found BBBEurobot v." ${BBBLIB_VERSION})
 
 include_directories(${ARMGLIB_INCLUDE_DIRS} ${BBBLIB_INCLUDE_DIRS})

@@ -1,0 +1,168 @@
+/*
+ * Eurobot Tree Overlay
+ * This overlay is responsible for enabling the various components used for Eurobot and the corresponding cape.
+ * The following features are enabled:
+ *  - SPI0-0 on pins 17 (CS) 18 (DOutput) 21 (DInput) 22 (CLK)
+ *  - SPI0-1 0 and 1 on pins 28 (CS0) 29 (DInput) 30 (DOutput) 31 (CLK) 42 (CS1)
+ *  - I2C-1 on pins 19 (SCL) and 20 (SDA)
+ *  - I2C-2 on pins 24 (SCL) and 26 (SDA)
+ * 
+ * Note that the /dev/* names do not match those of the prots. For now:
+ *  - I2C 1 maps to /dev/i2c-2
+ *  - I2C 2 maps to /dev/i2c-1
+ *  - SPI 0.0 maps to /dev/spidev1.0
+ *  - SPI 1.0 maps to /dev/spidev2.0
+ *  - SPI 1.1 maps to /dev/spidev2.1
+ * To get pin offset and pin mode values, see for example:
+ * http://www.embedded-things.com/bbb/beaglebone-black-pin-mux-spreadsheet/	
+ */ 
+/dts-v1/;
+/plugin/;
+
+/* SPI1 */
+/* D1 Output and D0 Input */
+
+/ {
+    compatible = "ti,beaglebone", "ti,beaglebone-black";
+
+    /* identification */
+    part-number = "eurobot";
+	version = "00A0";
+	
+	/* Define pins with exclusive use */
+	exclusive-use = 
+		"P9.17",
+		"P9.18",
+		"P9.19",
+		"P9.20",
+		"P9.21",
+		"P9.22",
+		"P9.24",
+		"P9.26",
+		"P9.28",
+		"P9.29",
+		"P9.30",
+		"P9.31",
+		"P9.42",
+		"i2c1",
+		"i2c2",
+		"spi0",
+		"spi1";
+	
+	/* Define pin usage*/
+    fragment@0 {
+        target = <&am33xx_pinmux>;
+        __overlay__ {
+            spi0_pins_s0: spi0_pins_s0 {
+                        pinctrl-single,pins = <
+                                0x150 0x30      /* P9.22 - CLK - INPUT_PULLUP | MODE0 */
+                                0x154 0x30      /* P9.21 - DInput - INPUT_PULLUP | MODE0 */
+                                0x158 0x10      /* P9.18 - DOutput - OUTPUT_PULLUP | MODE0 */
+                                0x15C 0x10      /* P9.17 - CS0 - OUTPUT_PULLUP | MODE0 */
+                >;
+            };
+            spi1_pins_s0: spi1_pins_s0 {
+                        pinctrl-single,pins = <
+                                0x190 0x33      /* P9.31 - CLK - INPUT_PULLUP | MODE3 */
+                                0x194 0x33      /* P9.29 - DInput - INPUT_PULLUP | MODE3 */
+                                0x198 0x13      /* P9.30 - DOutput - OUTPUT_PULLUP | MODE3 */
+                                0x19C 0x13      /* P9.28 - CS0 - OUTPUT_PULLUP | MODE3 */
+                                0x164 0x12      /* P9.42 - CS1 - OUTPUT_PULLUP | MODE2 */
+                >;
+            };
+
+            i2c1_pins: i2c1_pins {
+                        pinctrl-single,pins = <
+                                0x184 0x33      /* P9.24 - SCL - INPUT_PULLUP | MODE3 */
+                                0x180 0x33      /* P9.26 - SDA - INPUT_PULLUP | MODE3 */
+                >;
+            };
+            i2c2_pins: i2c2_pins {
+                        pinctrl-single,pins = <
+                                0x17C 0x33      /* P9.19 - SCL - INPUT_PULLUP | MODE3 */
+                                0x178 0x33      /* P9.20 - SDA - INPUT_PULLUP | MODE3 */
+                >;
+            };
+        };
+    };
+    
+	/* SPI0*/
+	fragment@1 {
+        target = <&spi0>;
+        __overlay__ {
+             #address-cells = <1>;
+             #size-cells = <0>;
+
+             status = "okay";
+             pinctrl-names = "default";
+             pinctrl-0 = <&spi0_pins_s0>;
+
+             spidev@0 {
+                 spi-max-frequency = <24000000>;
+                 reg = <0>;
+                 compatible = "linux,spidev";
+            };
+        };
+    };
+   
+	/* SPI1*/
+   fragment@2 {
+    target = <&spi1>;	/* spi1 is numbered correctly */
+    __overlay__ {
+      status = "okay";
+      pinctrl-names = "default";
+      pinctrl-0 = <&spi1_pins_s0>;
+
+#address-cells = <1>;
+#size-cells = <0>;
+
+      cs-gpios = <0>, <0>;
+
+      spi1@0 {
+#address-cells = <1>;
+#size-cells = <0>;
+	compatible = "spidev";
+	reg = <0>;
+	spi-max-frequency = <16000000>;
+	spi-cpol;
+	spi-cpha;          
+      };
+
+      spi1@1 {
+#address-cells = <1>;
+#size-cells = <0>;
+	compatible = "spidev";
+	reg = <1>;
+	spi-max-frequency = <16000000>;
+	spi-cpol;
+	spi-cpha;
+      };
+
+    }; 
+    };
+    
+    
+    /* I2C1*/
+    fragment@4 {
+        target = <&i2c1>;
+        __overlay__ {
+             #address-cells = <1>;
+             #size-cells = <0>;
+             status = "okay";
+             pinctrl-names = "default";
+             pinctrl-0 = <&i2c1_pins>;
+        };
+    };
+    
+    /* I2C2*/
+    fragment@5 {
+        target = <&i2c2>;
+        __overlay__ {
+             #address-cells = <1>;
+             #size-cells = <0>;
+             status = "okay";
+             pinctrl-names = "default";
+             pinctrl-0 = <&i2c2_pins>;
+        };
+    };
+};
