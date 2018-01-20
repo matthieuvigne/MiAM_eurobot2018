@@ -1,5 +1,5 @@
 # eurobot2018
-Participation à la Coupe de France de Robotique (Eurobot) 2018 de l'équipe ... (il nous faut vraiment un nom d'équipe là ^^)
+Participation à la Coupe de France de Robotique (Eurobot) 2018 de l'équipe Miam !
 
 ## Contenu
  - **Electronique**: fichiers relatifs aux circuits imprimés utilisés sur le robot, et au cablage. 
