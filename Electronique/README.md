@@ -18,7 +18,7 @@ Le schéma (BeagleboneCape.sch) et le layout (BeagleboneCape.pcb) d'un cape couv
 
 ### SensorDriver
 
-Le schéma (SensorDriver.sch) et le layout (SensorDriver.pcb) d'une carte permettant de commander des servomoteurs à partir d´une liaison I2C. Cette carte se base sur le PCA9685 pour générer des impulsions de servo (avec une précision de 5us seulement). Le composant peut être alimenté en 3.3V ou 5V - une entrée 5V est alors nécessaire pour que le signal pour les servos soit à 5V. Cette carte inclus aussi son propre convertisseur de tension ajustable, pour passer d´une entrée batterie 12V à 7V. Le courant max est de 5A - 14 sorties servos sont exposées, mais utiliser autant de servos en même temps risque de dépasser ce seuil de courant : un régulateur externe serait alors nécessaire.
+Le schéma (SensorDriver.sch) et le layout (SensorDriver.pcb) d'une carte permettant de commander des servomoteurs à partir d´une liaison I2C. Cette carte se base sur le PCA9685 pour générer des impulsions de servo (avec une précision de 5us seulement). Le composant peut être alimenté en 3.3V ou 5V - une entrée 5V est alors nécessaire pour que le signal pour les servos soit à 5V. Cette carte inclus aussi son propre convertisseur de tension ajustable, pour passer d´une entrée batterie 12V à 7V. Le courant max est de 5A - 16 sorties servos sont exposées, mais utiliser autant de servos en même temps risque de dépasser ce seuil de courant : un régulateur externe serait alors nécessaire. 8 des sorties ont en effet une ligne Vin séparée par un cavalier, afin d´être facilement relié à une autre source d´alimentation , les 8 autres restant sur le régulateur embarqué.
 
 
 ### ArchitectureElec
