@@ -54,6 +54,6 @@ if ret == True:
 	
 	# Get camera calibration parameters
 	ret2, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints,imgpoints,gray.shape[::-1],None,None)
-	print mtx
+	print(mtx)
 
 cv2.destroyAllWindows()
