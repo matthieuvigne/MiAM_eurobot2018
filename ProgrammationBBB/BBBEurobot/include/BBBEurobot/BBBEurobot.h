@@ -11,6 +11,7 @@
 	#include <BBBEurobot/ADNS9800Driver.h>
 	#include <BBBEurobot/Ax12Driver.h>
 	#include <BBBEurobot/BBBGpio.h>
+	#include <BBBEurobot/BeagleboneCape.h>
 	#include <BBBEurobot/I2C-Wrapper.h>
 	#include <BBBEurobot/IMUDriver.h>
 	#include <BBBEurobot/IRRecieverDriver.h>

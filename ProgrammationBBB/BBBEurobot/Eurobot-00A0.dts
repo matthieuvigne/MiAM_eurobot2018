@@ -6,6 +6,9 @@
  *  - SPI0-1 0 and 1 on pins 28 (CS0) 29 (DInput) 30 (DOutput) 31 (CLK) 42 (CS1)
  *  - I2C-1 on pins 19 (SCL) and 20 (SDA)
  *  - I2C-2 on pins 24 (SCL) and 26 (SDA)
+ *  - GPIO 30 as input with pullup
+ *  - GPIO 60 as input with pulldown
+ *  - GPIO 31 as output
  * 
  * Note that the /dev/* names do not match those of the prots. For now:
  *  - I2C 1 maps to /dev/i2c-2
@@ -19,8 +22,6 @@
 /dts-v1/;
 /plugin/;
 
-/* SPI1 */
-/* D1 Output and D0 Input */
 
 / {
     compatible = "ti,beaglebone", "ti,beaglebone-black";
@@ -31,6 +32,10 @@
 	
 	/* Define pins with exclusive use */
 	exclusive-use = 
+		"P9.11",
+		"P9.12",
+		"P9.13",
+		"P9.14",
 		"P9.17",
 		"P9.18",
 		"P9.19",
@@ -44,6 +49,15 @@
 		"P9.30",
 		"P9.31",
 		"P9.42",
+		"P8.7",
+		"P8.8",
+		"P8.9",
+		"P8.10",
+		"P8.11",
+		"P8.12",
+		"P8.14",
+		"P8.15",
+		"P8.16",
 		"i2c1",
 		"i2c2",
 		"spi0",
@@ -81,6 +95,21 @@
                         pinctrl-single,pins = <
                                 0x17C 0x33      /* P9.19 - SCL - INPUT_PULLUP | MODE3 */
                                 0x178 0x33      /* P9.20 - SDA - INPUT_PULLUP | MODE3 */
+                >;
+            };
+            gpio_pins: gpio_pins {
+				pinctrl-single,pins = <
+								/* Exposed GPIO ports*/
+                                0x090 0x37      /* P8.7 - GPIO66 - INPUT_PULLUP | MODE7 */
+                                0x094 0x37      /* P8.8 - GPIO67 - INPUT_PULLUP | MODE7 */
+                                0x09C 0x37      /* P8.9 - GPIO69 - INPUT_PULLUP | MODE7 */
+                                0x098 0x37      /* P8.10 - GPIO68 - INPUT_PULLUP | MODE7 */
+                                0x034 0x37      /* P8.11 - GPIO45 - INPUT_PULLUP | MODE7 */
+                                0x030 0x37      /* P8.12 - GPIO44 - INPUT_PULLUP | MODE7 */
+                                0x028 0x37      /* P8.14 - GPIO26 - INPUT_PULLUP | MODE7 */
+								/* LED ports */
+                                0x03C 0x07      /* P8.15 - GPIO47 - OUTPUT | MODE7 */
+                                0x038 0x07      /* P8.16 - GPIO46 - OUTPUT | MODE7 */
                 >;
             };
         };
@@ -163,6 +192,19 @@
              status = "okay";
              pinctrl-names = "default";
              pinctrl-0 = <&i2c2_pins>;
+        };
+    };
+    
+    /* GPIO*/
+    fragment@6 {
+        target = <&ocp>;
+        __overlay__ {
+            Eurobot_pinmux: helper {
+                compatible = "bone-pinmux-helper";
+                pinctrl-names = "default";
+                pinctrl-0 = <&gpio_pins>;
+                status = "okay";
+            };
         };
     };
 };

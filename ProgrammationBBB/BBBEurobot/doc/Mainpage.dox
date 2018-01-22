@@ -23,3 +23,7 @@ Doxygen main page
 ///		- PCA9635Driver.h: Driver for the PCA9635 I2C led driver.
 ///	- Generic algorithms:
 ///		- KalmanFilter.h: A linear Kalman filter to estimate the orientation of the robot.
+///
+/// Additionally, the file BeagleboneCape.h maps the exposed output of the PCB.
+
+
