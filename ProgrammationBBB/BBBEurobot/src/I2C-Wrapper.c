@@ -1,4 +1,3 @@
-//wrapper pour la communication i2c
 #include "BBBEurobot/I2C-Wrapper.h"
 
 #include <unistd.h>
@@ -10,7 +9,7 @@
 #include <string.h>
 #include <glib.h>
 
-//Muxter for thread safety.
+//Mutex for thread safety.
 GMutex mut;
 
 int i2c_open(char *portName)

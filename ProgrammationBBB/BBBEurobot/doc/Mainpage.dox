@@ -21,6 +21,7 @@ Doxygen main page
 ///		- IMUDriver.h: Driver for a Pololu MiniIMU v4 sensor (L3GD20H and LSM303D).
 ///		- L6470Driver.h: Driver for the L6470 stepper motor driver.
 ///		- PCA9635Driver.h: Driver for the PCA9635 I2C led driver.
+///		- PCAServoDriver.h: Driver for the ServoDriver board (using PCA9685 chip to generate servo signals).
 ///	- Generic algorithms:
 ///		- KalmanFilter.h: A linear Kalman filter to estimate the orientation of the robot.
 ///

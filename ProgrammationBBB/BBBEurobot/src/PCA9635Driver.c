@@ -1,10 +1,3 @@
-/*
- * PCA9635.c
- * 
- * Driver pour le pilote de led
- * 
- */
-
 #include "BBBEurobot/PCA9635Driver.h"
 #include "BBBEurobot/I2C-Wrapper.h"
 
