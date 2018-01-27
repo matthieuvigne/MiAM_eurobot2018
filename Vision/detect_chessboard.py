@@ -19,8 +19,8 @@ import glob
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 50, 0.001)
 
 # Chessboard parameters (the dimensions depict the number of cells to be detected)
-width = 7
-length = 6
+width = 3
+length = 3
 
 # Prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
 # These will be the coordinated of the chessboard cells intersections in the local referential of the chessboard
@@ -32,7 +32,7 @@ objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
 
 # Read test image
-img = cv2.imread("chessboard_2.jpg")
+img = cv2.imread("chessboard_10_red.jpg")
 gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
 # Find the chess board corners
@@ -43,17 +43,20 @@ print(ret)
 
 # If found, add object points, image points (after refining them)
 if ret == True:
-	objpoints.append(objp)
-
-	cv2.cornerSubPix(gray,corners,(11,11),(-1,-1),criteria)
-	imgpoints.append(corners)
-
-	# Draw and display the corners
-	cv2.drawChessboardCorners(img, (width,length), corners,ret)
-	cv2.imwrite('detected_chessboard.png',img)
-	
-	# Get camera calibration parameters
-	ret2, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints,imgpoints,gray.shape[::-1],None,None)
-	print(mtx)
+    objpoints.append(objp)
+    
+    cv2.cornerSubPix(gray,corners,(11,11),(-1,-1),criteria)
+    imgpoints.append(corners)
+    
+    # Draw and display the corners
+    cv2.drawChessboardCorners(img, (width,length), corners,ret)
+    cv2.imwrite('detected_chessboard.png',img)
+    
+    # Get camera calibration parameters
+    ret2, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints,imgpoints,gray.shape[::-1],None,None)
+    print(mtx)
+    print(dist)
+    print(rvecs)
+    print(tvecs)
 
 cv2.destroyAllWindows()
