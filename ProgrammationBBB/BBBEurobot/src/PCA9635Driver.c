@@ -1,5 +1,4 @@
 #include "BBBEurobot/PCA9635Driver.h"
-#include "BBBEurobot/I2C-Wrapper.h"
 
 #define LEDOUTOFFSET 0x14
 #define PWMOFFSET 2
@@ -15,15 +14,15 @@ void setPinState(PCA9635 *d, int pin, char ledState)
 	d->ledState[pin / 4] |= ledState << (2 * (pin % 4));
 	
 	if(lastpinstate != d->ledState[pin / 4])
-		i2c_writeRegister(d->port, d->address, LEDOUTOFFSET + pin / 4, d->ledState[pin / 4]);
+		i2c_writeRegister(d->adapter, d->address, LEDOUTOFFSET + pin / 4, d->ledState[pin / 4]);
 }
 
 
-gboolean ledDriver_init(PCA9635 *d, int port, int address)
+gboolean ledDriver_init(PCA9635 *d, I2CAdapter *adapter, int address)
 {
-	d->port = port;
-	if(port < 0)
+	if(adapter->file < 0)
 		return FALSE;
+	d->adapter = adapter;
 	d->address = address;
 	// At startup, all leds are turned off.
 	d->ledState[0] = 255;
@@ -33,13 +32,13 @@ gboolean ledDriver_init(PCA9635 *d, int port, int address)
 	for(int x = 0; x < 16; x ++)
 		ledDriver_setLedBrightness(d, x, 0);
 	// Enable driver
-	return i2c_writeRegister(d->port, d->address, 0x80, 0x80);
+	return i2c_writeRegister(d->adapter, d->address, 0x80, 0x80);
 }
 
 
 void ledDriver_setLedBrightness(PCA9635 *d, int pin, int brightness)
 {
-	if(d->port < 0)
+	if(d->adapter < 0)
 		return;
 	if(pin > 15 || pin < 0) return;
 	if(brightness < 0)	 brightness = 0;
@@ -52,7 +51,7 @@ void ledDriver_setLedBrightness(PCA9635 *d, int pin, int brightness)
 	else
 	{
 		setPinState(d, pin, 2);	
-		i2c_writeRegister(d->port, d->address, PWMOFFSET + pin, brightness);
+		i2c_writeRegister(d->adapter, d->address, PWMOFFSET + pin, brightness);
 	}
 }
 

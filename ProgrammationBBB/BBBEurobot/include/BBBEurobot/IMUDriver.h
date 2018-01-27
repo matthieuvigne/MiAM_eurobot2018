@@ -7,13 +7,13 @@
 ///	\note	 Sensor precision setting is hardcoded, see source code directly.
 #ifndef IMU_DRIVER_H
 	#define IMU_DRIVER_H
-	#include <glib.h>
+	#include "BBBEurobot/I2C-Wrapper.h"
 	
 	/// IMU structure.
 	typedef struct {
-	int port;		///< I2C port file descriptor.
-	int gyroAddress;	///< Gyroscope I2C address.
-	int accelAddress;	///< Accelerometer I2C address.
+		I2CAdapter *adapter; ///< Pointer to the I2C port being used.
+		int gyroAddress;	 ///< Gyroscope I2C address.
+		int accelAddress;	 ///< Accelerometer I2C address.
 	}IMU;
 	
 	/// \brief Initialize IMU structure.
@@ -21,15 +21,16 @@
     /// \details This function tests the communication with the IMU, and, if successful, inits the structure.
     ///
     /// \param[out] imu The IMU structure, to be used whenever communication with the IMU.
-    /// \param[in] port File descriptor of the i2c port (as returned by the i2c_open function, see I2C-Wrapper.h).
+    /// \param[in] adapter Pointer to a valid I2CAdapter to choose the I2C port (as returned by the i2c_open function,
+    ///                    see I2C-Wrapper.h).
     /// \param[in] gyroAddress I2C address of the gyroscope.
     /// \param[in] accelAddress I2C address of the accelerometer.
     /// \returns   TRUE on success, FALSE otherwise.
-	gboolean imu_init(IMU *imu, int port, int gyroAddress, int accelAddress);
+	gboolean imu_init(IMU *imu, I2CAdapter *adapter, int gyroAddress, int accelAddress);
 	
 	/// \brief Calls imu_init with the default sensor I2C addresses.
     ///
-	static inline gboolean imu_initDefault(IMU *imu, int port){return imu_init(imu, port, 0b1101011, 0b0011101);}
+	static inline gboolean imu_initDefault(IMU *imu, I2CAdapter *adapter){return imu_init(imu, adapter, 0b1101011, 0b0011101);}
 	
 	
 	/// \brief Get gyroscope reading along X axis.

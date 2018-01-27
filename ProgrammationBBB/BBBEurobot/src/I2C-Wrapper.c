@@ -5,66 +5,75 @@
 #include <fcntl.h>
 #include <linux/i2c-dev.h>
 #include <sys/ioctl.h>
-#include <errno.h>       
+#include <errno.h>
 #include <string.h>
-#include <glib.h>
 
-//Mutex for thread safety.
-GMutex mut;
-
-int i2c_open(char *portName)
+gboolean i2c_open(I2CAdapter *adapter, gchar *portName)
 {
-	int file = open(portName, O_RDWR);
-	if(file < 0)
+	adapter->file = open(portName, O_RDWR);
+	g_mutex_init(&(adapter->portMutex));
+	if(adapter->file < 0)
 	{
-		printf("Failed to open the i2c bus: %s\n", g_strerror(errno));
-		return file;
+		printf("Failed to open i2c bus %s: %s\n", portName, g_strerror(errno));
+		return FALSE;
 	}
-    return file;
+    return TRUE;
 }
 
 
-void changeSlave(int port, int address)
+void changeSlave(int file, int address)
 {
-	if (ioctl(port,I2C_SLAVE,address) < 0) 
+	if (ioctl(file,I2C_SLAVE,address) < 0)
         printf("I2C: failed to talk to slave %d : %s.\n", address, strerror(errno));
 }
 
 
-int i2c_writeRegister(int port, int address, unsigned char reg, unsigned char data)
+gboolean i2c_writeRegister(I2CAdapter *adapter, int address, unsigned char reg, unsigned char data)
 {
 	unsigned char txbuf[2] = {reg, data};
-	g_mutex_lock (&mut);
-	changeSlave(port, address);
-	int res = write(port, txbuf, 2);
-	g_mutex_unlock (&mut);
-	if(res != 2)
-		return -1;
-	return 0;
+	g_mutex_lock (&(adapter->portMutex));
+	changeSlave(adapter->file, address);
+	int result = write(adapter->file, txbuf, 2);
+	g_mutex_unlock (&(adapter->portMutex));
+	if(result != 2)
+	{
+		printf("Error writing to slave %d: %s\n", address, g_strerror(errno));
+		return FALSE;
+	}
+	return TRUE;
 }
 
 
-unsigned char i2c_readRegister(int port, int address, unsigned char reg)
+unsigned char i2c_readRegister(I2CAdapter *adapter, int address, unsigned char reg)
 {
-	unsigned char b;
-	g_mutex_lock (&mut);
-	changeSlave(port, address);
-	write(port, &reg, 1);
-	read(port, &b, 1);
-	g_mutex_unlock (&mut);
-	return b;
+	unsigned char registerValue;
+	i2c_readRegisters(adapter, address, reg, 1, &registerValue);
+	return registerValue;
 }
 
 
-void i2c_readRegisters(int port, int address, unsigned char reg, int length, unsigned char *output)
+gboolean i2c_readRegisters(I2CAdapter *adapter, int address, unsigned char reg, int length, unsigned char *output)
 {
-	g_mutex_lock (&mut);
-	changeSlave(port, address);
-	write(port, &reg, 1);
-	read(port, output, length);
-	g_mutex_unlock (&mut);
+	gboolean returnValue = TRUE;
+	g_mutex_lock (&(adapter->portMutex));
+	changeSlave(adapter->file, address);
+	int result = write(adapter->file, &reg, 1);
+	if(result < 0)
+	{
+		printf("Error writing to slave %d: %s\n", address, g_strerror(errno));
+		returnValue = FALSE;
+	}
+	result = read(adapter->file, output, length);
+	if(result < 0)
+	{
+		printf("Error reading from slave %d: %s\n", address, g_strerror(errno));
+		returnValue = FALSE;
+	}
+	g_mutex_unlock (&(adapter->portMutex));
+
+	return returnValue;
 }
-	
+
 void i2c_close(int device)
 {
 	if(device < 0)

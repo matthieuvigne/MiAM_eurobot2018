@@ -5,13 +5,13 @@
 ///	\note	 All functions in this header should be prefixed with ledDriver_.
 #ifndef PCA9635_DRIVER
 	#define PCA9635_DRIVER
-	#include <glib.h>
+	#include "BBBEurobot/I2C-Wrapper.h"
 	
 	/// Led driver structure.
 	typedef struct {
-	int port;		///< I2C port file descriptor.
-	int address;	///< Led driver address.
-	unsigned char ledState[4];	///< Current state of the leds: on, off or under PWM control.
+		I2CAdapter *adapter;		///< I2C port file descriptor.
+		int address;	///< Led driver address.
+		unsigned char ledState[4];	///< Current state of the leds: on, off or under PWM control.
 	}PCA9635;
 	
 	
@@ -20,10 +20,11 @@
     /// \details This function tests the communication with the led driver, and, if successful, inits the structure.
     ///
     /// \param[out] driver The PCA9635 structure, to be used whenever communication with the led driver.
-    /// \param[in] port File descriptor of the i2c port (as returned by the i2c_open function, see I2C-Wrapper.h).
+    /// \param[in] adapter Pointer to a valid I2CAdapter to choose the I2C port (as returned by the i2c_open function,
+    ///                    see I2C-Wrapper.h).
     /// \param[in] address I2C address of the PCA9635.
     /// \returns   TRUE on success, FALSE otherwise.
-	gboolean ledDriver_init(PCA9635 *driver, int port, int address);	
+	gboolean ledDriver_init(PCA9635 *driver, I2CAdapter *adapter, int address);	
 	
 	/// \brief Set brightness of a single LED.
     ///

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 #Configure project
-project(BBBEurobot VERSION 0.9.2)
+project(BBBEurobot VERSION 0.9.3)
 set(PROJECT_DESCRIPTION "C utility library to use a Beaglebone Black for Eurobot - low-level drivers and some higher level utilities")
 
 # Set compiler to arm compiler (cross-compile)

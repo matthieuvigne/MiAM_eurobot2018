@@ -1,5 +1,4 @@
 #include "BBBEurobot/IMUDriver.h"
-#include "BBBEurobot/I2C-Wrapper.h"
 #include <stdio.h>
 
 // Note: all three components can work with different resolution: a greater
@@ -31,27 +30,27 @@ const double magnetoMultiplier[4] = {0.479,0.32,0.16,0.080};
 gboolean initGyro(IMU i)
 {
     // Verify it is the right gyroscope.
-    if(i2c_readRegister(i.port, i.gyroAddress, 0x0F) != 0xD7)
+    if(i2c_readRegister(i.adapter, i.gyroAddress, 0x0F) != 0xD7)
     {
 		printf("Error : L3GD20H not detected\n");
 		return FALSE;
 	}
     
 	// Configure gyroscope to match GYRO_PRES
-    i2c_writeRegister(i.port, i.gyroAddress, 0x23, gyroReg[GYRO_PRES]);	
+    i2c_writeRegister(i.adapter, i.gyroAddress, 0x23, gyroReg[GYRO_PRES]);	
     
     // DR = 01 (200 Hz ODR); BW = 10 (50 Hz bandwidth); PD = 1 (normal mode); Zen = Yen = Xen = 1 (all axes enabled)
-	i2c_writeRegister(i.port, i.gyroAddress, 0x20, 0b11101111);
+	i2c_writeRegister(i.adapter, i.gyroAddress, 0x20, 0b11101111);
     
 	return TRUE;
 }
 
 double imu_gyroGetXAxis(IMU i)
 {
-	if(i.port < 0)
+	if(i.adapter < 0)
 		return 0;
 	unsigned char rxbuf[2];
-	i2c_readRegisters(i.port, i.gyroAddress, 0xA8, 2, rxbuf);	//x register, auto-increment
+	i2c_readRegisters(i.adapter, i.gyroAddress, 0xA8, 2, rxbuf);	//x register, auto-increment
 	int res = (rxbuf[1] << 8 ) + rxbuf[0];
 	if(res > 32767)
 		res -= 65536;
@@ -60,10 +59,10 @@ double imu_gyroGetXAxis(IMU i)
 
 double imu_gyroGetYAxis(IMU i)
 {
-	if(i.port < 0)
+	if(i.adapter < 0)
 		return 0;
 	unsigned char rxbuf[2];
-	i2c_readRegisters(i.port, i.gyroAddress, 0xAA, 2, rxbuf);	//y register, auto-increment
+	i2c_readRegisters(i.adapter, i.gyroAddress, 0xAA, 2, rxbuf);	//y register, auto-increment
 	int res = (rxbuf[1] << 8 ) + rxbuf[0];
 	if(res > 32767)
 		res -= 65536;
@@ -72,10 +71,10 @@ double imu_gyroGetYAxis(IMU i)
 
 double imu_gyroGetZAxis(IMU i)
 {
-	if(i.port < 0)
+	if(i.adapter < 0)
 		return 0;
 	unsigned char rxbuf[2];
-	i2c_readRegisters(i.port, i.gyroAddress, 0xAC, 2, rxbuf);	//z register, auto-increment
+	i2c_readRegisters(i.adapter, i.gyroAddress, 0xAC, 2, rxbuf);	//z register, auto-increment
 	int res = (rxbuf[1] << 8 ) + rxbuf[0];
 	if(res > 32767)
 		res -= 65536;
@@ -85,7 +84,7 @@ double imu_gyroGetZAxis(IMU i)
 
 void imu_gyroGetValues(IMU i, double *x, double *y, double *z)
 {
-	if(i.port < 0)
+	if(i.adapter < 0)
 	{
 		*x = 0;
 		*y = 0;
@@ -93,7 +92,7 @@ void imu_gyroGetValues(IMU i, double *x, double *y, double *z)
 		return;
 	}
 	unsigned char rxbuf[6];
-	i2c_readRegisters(i.port, i.gyroAddress, 0xA8, 6, rxbuf);
+	i2c_readRegisters(i.adapter, i.gyroAddress, 0xA8, 6, rxbuf);
 	int res = (rxbuf[1] << 8 ) + rxbuf[0];
 	if(res > 32767)
 		res -= 65536;
@@ -114,7 +113,7 @@ void imu_gyroGetValues(IMU i, double *x, double *y, double *z)
 gboolean initAccel(IMU i)
 {
     // Verify it is the right accelerometer.
-    if(i2c_readRegister(i.port, i.accelAddress, 0x0F) != 0x49)
+    if(i2c_readRegister(i.adapter, i.accelAddress, 0x0F) != 0x49)
     {
 		printf("Error : LSM303D not detected\n");
 		return -1;
@@ -122,27 +121,27 @@ gboolean initAccel(IMU i)
 	//Configure accelerometer and magnetometer.
 	
     //CTRL1, Output-enable, data rate
-	i2c_writeRegister(i.port, i.accelAddress, 0x20, 0b10000111);
+	i2c_writeRegister(i.adapter, i.accelAddress, 0x20, 0b10000111);
 	//CTRL2, resolution
-	i2c_writeRegister(i.port, i.accelAddress, 0x21, accelReg[ACCEL_PRES]);
+	i2c_writeRegister(i.adapter, i.accelAddress, 0x21, accelReg[ACCEL_PRES]);
 	
 	//Magnetometer
 	//CTRL5
-    i2c_writeRegister(i.port, i.accelAddress, 0x24, 0x64);
+    i2c_writeRegister(i.adapter, i.accelAddress, 0x24, 0x64);
     //CTRL6, echelle
-    i2c_writeRegister(i.port, i.accelAddress, 0x25, magnetoReg[MAGNETO_PRES]);
+    i2c_writeRegister(i.adapter, i.accelAddress, 0x25, magnetoReg[MAGNETO_PRES]);
     //CTRL7, enable		
-    i2c_writeRegister(i.port, i.accelAddress, 0x26, 0b10000000	);		
+    i2c_writeRegister(i.adapter, i.accelAddress, 0x26, 0b10000000	);		
     
 	return 0;
 }
 
 double imu_accelGetXAxis(IMU i)
 {
-	if(i.port < 0)
+	if(i.adapter < 0)
 		return 0;
 	unsigned char rxbuf[2];
-	i2c_readRegisters(i.port, i.accelAddress, 0xA8, 2, rxbuf);	//x register, auto-increment
+	i2c_readRegisters(i.adapter, i.accelAddress, 0xA8, 2, rxbuf);	//x register, auto-increment
 	int res = (rxbuf[1] << 8 ) + rxbuf[0];
 	if(res > 32767)
 		res -= 65536;
@@ -151,10 +150,10 @@ double imu_accelGetXAxis(IMU i)
 
 double imu_accelGetYAxis(IMU i)
 {
-	if(i.port < 0)
+	if(i.adapter < 0)
 		return 0;
 	unsigned char rxbuf[2];
-	i2c_readRegisters(i.port, i.accelAddress, 0xAA, 2, rxbuf);	//y register, auto-increment
+	i2c_readRegisters(i.adapter, i.accelAddress, 0xAA, 2, rxbuf);	//y register, auto-increment
 	int res = (rxbuf[1] << 8 ) + rxbuf[0];
 	if(res > 32767)
 		res -= 65536;
@@ -164,10 +163,10 @@ double imu_accelGetYAxis(IMU i)
 
 double imu_accelGetZAxis(IMU i)
 {
-	if(i.port < 0)
+	if(i.adapter < 0)
 		return 0;
 	unsigned char rxbuf[2];
-	i2c_readRegisters(i.port, i.accelAddress, 0xAC, 2, rxbuf);	//z register, auto-increment
+	i2c_readRegisters(i.adapter, i.accelAddress, 0xAC, 2, rxbuf);	//z register, auto-increment
 	int res = (rxbuf[1] << 8 ) + rxbuf[0];
 	if(res > 32767)
 		res -= 65536;
@@ -177,7 +176,7 @@ double imu_accelGetZAxis(IMU i)
 
 void imu_accelGetValues(IMU i, double *x, double *y, double *z)
 {
-	if(i.port < 0)
+	if(i.adapter < 0)
 	{
 		*x = 0;
 		*y = 0;
@@ -185,7 +184,7 @@ void imu_accelGetValues(IMU i, double *x, double *y, double *z)
 		return;
 	}
 	unsigned char rxbuf[6];
-	i2c_readRegisters(i.port, i.accelAddress, 0xA8, 6, rxbuf);
+	i2c_readRegisters(i.adapter, i.accelAddress, 0xA8, 6, rxbuf);
 	int res = (rxbuf[1] << 8 ) + rxbuf[0];
 	if(res > 32767)
 		res -= 65536;
@@ -203,10 +202,10 @@ void imu_accelGetValues(IMU i, double *x, double *y, double *z)
 
 double imu_magnetoGetXAxis(IMU i)
 {
-	if(i.port < 0)
+	if(i.adapter < 0)
 		return 0;
 	unsigned char rxbuf[2];
-	i2c_readRegisters(i.port, i.accelAddress, 0x88, 2, rxbuf);	//x register, auto-increment
+	i2c_readRegisters(i.adapter, i.accelAddress, 0x88, 2, rxbuf);	//x register, auto-increment
 	int res = (rxbuf[1] << 8 ) + rxbuf[0];
 	if(res > 32767)
 		res -= 65536;
@@ -215,10 +214,10 @@ double imu_magnetoGetXAxis(IMU i)
 
 double imu_magnetoGetYAxis(IMU i)
 {
-	if(i.port < 0)
+	if(i.adapter < 0)
 		return 0;
 	unsigned char rxbuf[2];
-	i2c_readRegisters(i.port, i.accelAddress, 0x8A, 2, rxbuf);	//y register, auto-increment
+	i2c_readRegisters(i.adapter, i.accelAddress, 0x8A, 2, rxbuf);	//y register, auto-increment
 	int res = (rxbuf[1] << 8 ) + rxbuf[0];
 	if(res > 32767)
 		res -= 65536;
@@ -228,10 +227,10 @@ double imu_magnetoGetYAxis(IMU i)
 
 double imu_magnetoGetZAxis(IMU i)
 {
-	if(i.port < 0)
+	if(i.adapter < 0)
 		return 0;
 	unsigned char rxbuf[2];
-	i2c_readRegisters(i.port, i.accelAddress, 0x8C, 2, rxbuf);	//z register, auto-increment
+	i2c_readRegisters(i.adapter, i.accelAddress, 0x8C, 2, rxbuf);	//z register, auto-increment
 	int res = (rxbuf[1] << 8 ) + rxbuf[0];
 	if(res > 32767)
 		res -= 65536;
@@ -241,7 +240,7 @@ double imu_magnetoGetZAxis(IMU i)
 
 void imu_magnetoGetValues(IMU i, double *x, double *y, double *z)
 {
-	if(i.port < 0)
+	if(i.adapter < 0)
 	{
 		*x = 0;
 		*y = 0;
@@ -249,7 +248,7 @@ void imu_magnetoGetValues(IMU i, double *x, double *y, double *z)
 		return;
 	}
 	unsigned char rxbuf[6];
-	i2c_readRegisters(i.port, i.accelAddress, 0x88, 6, rxbuf);
+	i2c_readRegisters(i.adapter, i.accelAddress, 0x88, 6, rxbuf);
 	int res = (rxbuf[1] << 8 ) + rxbuf[0];
 	if(res > 32767)
 		res -= 65536;
@@ -266,22 +265,20 @@ void imu_magnetoGetValues(IMU i, double *x, double *y, double *z)
 }
 
 
-gboolean imu_init(IMU *i, int port, int gyro, int accel)
+gboolean imu_init(IMU *i, I2CAdapter *adapter, int gyro, int accel)
 {
-	i->port=port;
-	if(port < 0)
+	if(adapter->file < 0)
 		return FALSE;
-	i->gyroAddress=gyro;
-	i->accelAddress=accel;
+	i->adapter = adapter;
+	i->gyroAddress = gyro;
+	i->accelAddress = accel;
 	if(initGyro(*i) == -1)
 	{
-		i->port = -1;
 		return FALSE;
 	}
 		
 	if(initAccel(*i) == -1)
 	{
-		i->port = -1;
 		return FALSE;
 	}
 	return TRUE;

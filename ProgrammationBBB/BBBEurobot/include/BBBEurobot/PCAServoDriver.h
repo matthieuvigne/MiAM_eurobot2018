@@ -5,12 +5,12 @@
 ///	\note	 All functions in this header should be prefixed with servoDriver_.
 #ifndef PCASERVO_DRIVER
 	#define PCASERVO_DRIVER
-	#include <glib.h>
+	#include "BBBEurobot/I2C-Wrapper.h"
 	
 	/// Led driver structure.
 	typedef struct {
-	int port;		///< I2C port file descriptor.
-	int address;	///< Servo driver address.
+		I2CAdapter *adapter;		///< I2C port file descriptor.
+		int address;	///< Servo driver address.
 	}ServoDriver;
 	
 	
@@ -19,10 +19,11 @@
     /// \details This function tests the communication with the servo driver, and, if successful, inits the structure.
     ///
     /// \param[out] driver The ServoDriver structure, to be used whenever communication with the driver.
-    /// \param[in] port File descriptor of the i2c port (as returned by the i2c_open function, see I2C-Wrapper.h).
+    /// \param[in] adapter Pointer to a valid I2CAdapter to choose the I2C port (as returned by the i2c_open function,
+    ///                    see I2C-Wrapper.h).
     /// \param[in] address I2C address of the ServoDriver.
     /// \returns   TRUE on success, FALSE otherwise.
-	gboolean servoDriver_init(ServoDriver *driver, int port, int address);	
+	gboolean servoDriver_init(ServoDriver *driver, I2CAdapter *adapter, int address);	
 	
 	/// \brief Set position of a servo.
     ///
