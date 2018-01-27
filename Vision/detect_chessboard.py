@@ -40,6 +40,7 @@ ret, corners = cv2.findChessboardCorners(gray, (width,length),None)
 
 # Did it succeed?
 print(ret)
+print(corners)
 
 # If found, add object points, image points (after refining them)
 if ret == True:
@@ -47,6 +48,11 @@ if ret == True:
     
     cv2.cornerSubPix(gray,corners,(11,11),(-1,-1),criteria)
     imgpoints.append(corners)
+    
+    print(imgpoints)
+    print(imgpoints[0].shape)
+    print(type(imgpoints[0]))
+    print(type(imgpoints[0][0]))
     
     # Draw and display the corners
     cv2.drawChessboardCorners(img, (width,length), corners,ret)
