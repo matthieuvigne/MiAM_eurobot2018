@@ -35,13 +35,13 @@ gboolean initGyro(IMU i)
 		printf("Error : L3GD20H not detected\n");
 		return FALSE;
 	}
-    
+
 	// Configure gyroscope to match GYRO_PRES
-    i2c_writeRegister(i.adapter, i.gyroAddress, 0x23, gyroReg[GYRO_PRES]);	
-    
+    i2c_writeRegister(i.adapter, i.gyroAddress, 0x23, gyroReg[GYRO_PRES]);
+
     // DR = 01 (200 Hz ODR); BW = 10 (50 Hz bandwidth); PD = 1 (normal mode); Zen = Yen = Xen = 1 (all axes enabled)
 	i2c_writeRegister(i.adapter, i.gyroAddress, 0x20, 0b11101111);
-    
+
 	return TRUE;
 }
 
@@ -97,7 +97,7 @@ void imu_gyroGetValues(IMU i, double *x, double *y, double *z)
 	if(res > 32767)
 		res -= 65536;
 	*x = res * gyroMultiplier[GYRO_PRES];
-	
+
 	res = (rxbuf[3] << 8 ) + rxbuf[2];
 	if(res > 32767)
 		res -= 65536;
@@ -119,20 +119,20 @@ gboolean initAccel(IMU i)
 		return -1;
 	}
 	//Configure accelerometer and magnetometer.
-	
+
     //CTRL1, Output-enable, data rate
 	i2c_writeRegister(i.adapter, i.accelAddress, 0x20, 0b10000111);
 	//CTRL2, resolution
 	i2c_writeRegister(i.adapter, i.accelAddress, 0x21, accelReg[ACCEL_PRES]);
-	
+
 	//Magnetometer
 	//CTRL5
     i2c_writeRegister(i.adapter, i.accelAddress, 0x24, 0x64);
     //CTRL6, echelle
     i2c_writeRegister(i.adapter, i.accelAddress, 0x25, magnetoReg[MAGNETO_PRES]);
-    //CTRL7, enable		
-    i2c_writeRegister(i.adapter, i.accelAddress, 0x26, 0b10000000	);		
-    
+    //CTRL7, enable
+    i2c_writeRegister(i.adapter, i.accelAddress, 0x26, 0b10000000	);
+
 	return 0;
 }
 
@@ -189,7 +189,7 @@ void imu_accelGetValues(IMU i, double *x, double *y, double *z)
 	if(res > 32767)
 		res -= 65536;
 	*x = (double) (res * accelMultiplier[ACCEL_PRES]);
-	
+
 	res = (rxbuf[3] << 8 ) + rxbuf[2];
 	if(res > 32767)
 		res -= 65536;
@@ -253,7 +253,7 @@ void imu_magnetoGetValues(IMU i, double *x, double *y, double *z)
 	if(res > 32767)
 		res -= 65536;
 	*x = res * magnetoMultiplier[MAGNETO_PRES];
-	
+
 	res = (rxbuf[3] << 8 ) + rxbuf[2];
 	if(res > 32767)
 		res -= 65536;
@@ -265,7 +265,7 @@ void imu_magnetoGetValues(IMU i, double *x, double *y, double *z)
 }
 
 
-gboolean imu_init(IMU *i, I2CAdapter *adapter, int gyro, int accel)
+gboolean imu_init(IMU *i, I2CAdapter *adapter, guint8 gyro, guint8 accel)
 {
 	if(adapter->file < 0)
 		return FALSE;
@@ -276,7 +276,7 @@ gboolean imu_init(IMU *i, I2CAdapter *adapter, int gyro, int accel)
 	{
 		return FALSE;
 	}
-		
+
 	if(initAccel(*i) == -1)
 	{
 		return FALSE;

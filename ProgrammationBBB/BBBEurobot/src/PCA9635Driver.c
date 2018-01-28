@@ -12,13 +12,13 @@ void setPinState(PCA9635 *d, int pin, char ledState)
 	d->ledState[pin / 4] &= ~(1 << (2 * (pin % 4)));
 	d->ledState[pin / 4] &= ~(1 << (2 * (pin % 4) + 1));
 	d->ledState[pin / 4] |= ledState << (2 * (pin % 4));
-	
+
 	if(lastpinstate != d->ledState[pin / 4])
 		i2c_writeRegister(d->adapter, d->address, LEDOUTOFFSET + pin / 4, d->ledState[pin / 4]);
 }
 
 
-gboolean ledDriver_init(PCA9635 *d, I2CAdapter *adapter, int address)
+gboolean ledDriver_init(PCA9635 *d, I2CAdapter *adapter, guint8 address)
 {
 	if(adapter->file < 0)
 		return FALSE;
@@ -43,14 +43,14 @@ void ledDriver_setLedBrightness(PCA9635 *d, int pin, int brightness)
 	if(pin > 15 || pin < 0) return;
 	if(brightness < 0)	 brightness = 0;
 	if(brightness > 255)   brightness = 255;
-	
+
 	if(brightness == 0)
 		setPinState(d, pin, 0);
 	else if(brightness == 255)
 		setPinState(d, pin, 1);
 	else
 	{
-		setPinState(d, pin, 2);	
+		setPinState(d, pin, 2);
 		i2c_writeRegister(d->adapter, d->address, PWMOFFSET + pin, brightness);
 	}
 }

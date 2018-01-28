@@ -21,16 +21,21 @@ gboolean i2c_open(I2CAdapter *adapter, gchar *portName)
 }
 
 
-void changeSlave(int file, int address)
+void changeSlave(int file, guint8 address)
 {
 	if (ioctl(file,I2C_SLAVE,address) < 0)
         printf("I2C: failed to talk to slave %d : %s.\n", address, strerror(errno));
 }
 
 
-gboolean i2c_writeRegister(I2CAdapter *adapter, int address, unsigned char reg, unsigned char data)
+gboolean i2c_writeRegister(I2CAdapter *adapter, guint8 address, guint8 reg, guint8 data)
 {
-	unsigned char txbuf[2] = {reg, data};
+	if(adapter->file < 0)
+	{
+		printf("Error writing to I2C port: invalid file descriptor.\n");
+		return FALSE;
+	}
+	guint8 txbuf[2] = {reg, data};
 	g_mutex_lock (&(adapter->portMutex));
 	changeSlave(adapter->file, address);
 	int result = write(adapter->file, txbuf, 2);
@@ -44,20 +49,25 @@ gboolean i2c_writeRegister(I2CAdapter *adapter, int address, unsigned char reg, 
 }
 
 
-unsigned char i2c_readRegister(I2CAdapter *adapter, int address, unsigned char reg)
+guint8 i2c_readRegister(I2CAdapter *adapter, guint8 address, guint8 registerAddress)
 {
-	unsigned char registerValue;
-	i2c_readRegisters(adapter, address, reg, 1, &registerValue);
+	guint8 registerValue;
+	i2c_readRegisters(adapter, address, registerAddress, 1, &registerValue);
 	return registerValue;
 }
 
 
-gboolean i2c_readRegisters(I2CAdapter *adapter, int address, unsigned char reg, int length, unsigned char *output)
+gboolean i2c_readRegisters(I2CAdapter *adapter, guint8 address, guint8 registerAddress, int length, guint8 *output)
 {
+	if(adapter->file < 0)
+	{
+		printf("Error reading from I2C port: invalid file descriptor.\n");
+		return FALSE;
+	}
 	gboolean returnValue = TRUE;
 	g_mutex_lock (&(adapter->portMutex));
 	changeSlave(adapter->file, address);
-	int result = write(adapter->file, &reg, 1);
+	int result = write(adapter->file, &registerAddress, 1);
 	if(result < 0)
 	{
 		printf("Error writing to slave %d: %s\n", address, g_strerror(errno));
