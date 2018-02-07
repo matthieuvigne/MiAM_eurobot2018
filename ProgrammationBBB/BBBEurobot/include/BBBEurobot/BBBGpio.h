@@ -1,25 +1,13 @@
 /// \file BBBGpio.h
-/// \brief Functions concerning the Beaglebone GPIOs and serial ports.
+/// \brief Functions concerning the Beaglebone GPIOs.
 ///
-/// \details This file implements all the functions to talk to the stepper motor controller.
-/// 		 It is adapted from Sparkfun's driver for Arduino. All functions are thread-safe.
+/// \details This file allows configuration and interface to the Beaglebone GPIOs.
 ///	\note	 All functions in this header should be prefixed with gpio_.
 #ifndef BBBGPIO_H
 #define BBBGPIO_H
 
 	#include <stdint.h>
 	#include <glib.h>
-
-
-	/// \brief Enable the Beaglebone serial ports and gpio.
-	/// \details This function must be called at the start of the program, before any access to a
-	///          serial port or gpio. This function returns nothing, but stops the program execution is uncessussful.
-	///
-	/// \warning This function uses the device tree overlay file "Eurobot-00A0.dtbo". This file must exist in
-	///          /lib/firmware, else this function fails. This function only activates this overlay : the behavior
-	///          of the system entirely depends on this file being properly written.
-	void gpio_enablePorts();
-
 
 	/// \brief Export a gpio pin, setting the direction.
 	/// \details Exporting a gpio pin maks it available in user-space. In practice, this create a folder in
@@ -56,4 +44,12 @@
 	///			Negative value on failure: -1: reading error (probably pin not enabled). -2: pin enabled but not an output.
 	int gpio_digitalWrite(int pin, int value);
 
+
+	/// \brief Read value from analog port.
+	///
+	/// \param[in] pin analog port number, from 0 to 6.
+	///
+	/// \return port voltage, between 0 and 4095 on success.
+	///         Negative value on failre: -1 on invalid pin number, -2 on any other failure.
+	int gpio_analogRead(int pin);
 #endif

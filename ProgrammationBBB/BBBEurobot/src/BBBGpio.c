@@ -1,64 +1,4 @@
 #include "BBBEurobot/BBBGpio.h"
-#include <stdlib.h>
-#include <stdio.h>
-
-// Internal function : access the cape manager to check if Eurobot is enabled. Exists if file access is not granted.
-gboolean isEurobotEnabled()
-{
-	// Look in slots file if the Eurobot overlay is already enabled.
-	GError *error = NULL;
-	GIOChannel *slot = g_io_channel_new_file ("/sys/devices/bone_capemgr.9/slots", "r", &error);
-	if(error != NULL)
-	{
-		printf("Enabling serial ports failed: cannot open cape manager (/sys/devices/bone_capemgr.9/slots).\n");
-		exit(0);
-	}
-
-	gboolean isEurobotEnabled = FALSE;
-	gchar *line= NULL;
-
-	// Check if the overlay is already enabled
-	while ( g_io_channel_read_line (slot, &line, NULL, NULL, NULL )!= G_IO_STATUS_EOF)
-	{
-		if(g_strstr_len (line, -1, "Eurobot")!= NULL)
-		{
-			isEurobotEnabled = TRUE;
-			break;
-		}
-		g_free(line);
-	}
-	g_free(line);
-	g_io_channel_shutdown(slot, TRUE, NULL);
-	g_io_channel_unref(slot);
-	return isEurobotEnabled;
-}
-
-void gpio_enablePorts()
-{
-	// Check if the overlay is already enabled.
-	if(isEurobotEnabled())
-		return;
-
-	// Else, let us first check that the overlay file exists.
-	gchar *overlayFile = g_strdup_printf("/lib/firmware/Eurobot-00A0.dtbo");
-	if(g_file_test(overlayFile, G_FILE_TEST_EXISTS) == FALSE)
-	{
-		printf("Enabling serial ports failed: cannot find overlay (%s).\n", overlayFile);
-		exit(0);
-	}
-	g_free(overlayFile);
-	// Enable the overlay.
-	system("echo Eurobot > /sys/devices/bone_capemgr.9/slots");
-
-	// Check that the overlay is indeed enabled.
-	if(isEurobotEnabled())
-		return;
-	else
-	{
-		printf("Enabling serial ports failed: unknown error.\n");
-		exit(0);
-	}
-}
 
 // Internal function : get the content of the first line of the file. Returns TRUE on success, FALSE on error.
 gboolean getFileContent(gchar *fileName, gchar **output)
@@ -198,4 +138,23 @@ int gpio_exportPin(int pin, gchar *direction)
 		return -1;
 	}
 	return 0;
+}
+
+
+int gpio_analogRead(int pin)
+{
+	if(pin < 0 || pin > 6)
+		return -2;
+
+	gchar *fileName = g_strdup_printf("/sys/bus/iio/devices/iio:device0/in_voltage%d_raw", pin);
+
+	gchar *portValue = "";
+	gboolean returnCode = getFileContent(fileName, &portValue);
+	g_free(fileName);
+	if(returnCode == FALSE)
+		return -1;
+
+	int value = g_ascii_strtoll(portValue, NULL, 10);
+	g_free(portValue);
+	return value;
 }

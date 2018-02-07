@@ -14,7 +14,7 @@
 	#include <BBBEurobot/BeagleboneCape.h>
 	#include <BBBEurobot/I2C-Wrapper.h>
 	#include <BBBEurobot/IMUDriver.h>
-	#include <BBBEurobot/IRRecieverDriver.h>
+	#include <BBBEurobot/LCDDriver.h>
 	#include <BBBEurobot/KalmanFilter.h>
 	#include <BBBEurobot/L6470Driver.h>
 	#include <BBBEurobot/PCA9635Driver.h>
