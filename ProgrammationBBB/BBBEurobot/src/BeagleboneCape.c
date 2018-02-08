@@ -64,9 +64,7 @@ void BBB_enableCape()
 	system("echo Eurobot > /sys/devices/bone_capemgr.9/slots");
 
 	// Check that the overlay is indeed enabled.
-	if(isEurobotEnabled())
-		return;
-	else
+	if(!isEurobotEnabled())
 	{
 		printf("Enabling serial ports failed: unknown error.\n");
 		exit(0);

@@ -1,7 +1,9 @@
 /// \file TCS3472ColorSensorDriver.h
-/// \brief Driver for TCS3472 RGB/clear light sensor.
+/// \brief Driver for TCS3472x RGB/clear light sensor.
 ///
-/// \details This file implements all the functions to work with the TCS3472, mounted on Adafruit ADA1334.
+/// \details This file implements all the functions to work with the TCS34725, mounted on Adafruit ADA1334.
+///          This code will also work for TCS34727 - for TCS34721 and TCS34723 slave address must be changed
+///          from 0x29 to 0x39 in the source code.
 ///	\note	 All functions in this header should be prefixed with colorSensor_.
 #ifndef TCS3472_DRIVER
 	#define TCS3472_DRIVER
@@ -10,7 +12,6 @@
 	/// Color sensor structure.
 	typedef struct {
 		I2CAdapter *adapter;		///< I2C port file descriptor.
-		guint8 address;	///< Servo driver address.
 	}ColorSensorTCS3472;
 
 	///< Enum giving the list of possible ADC gain.
@@ -33,13 +34,13 @@
 	/// \brief Initialize the sensor driver.
     ///
     /// \details This function tests the communication with the sensor, and, if successful, inits the structure.
+    ///          It also sets the gain to 1, and the integration time to 3ms.
     ///
     /// \param[out] driver The ColorSensorTCS3472 structure, to be used whenever communication with the sensor.
     /// \param[in] adapter Pointer to a valid I2CAdapter to choose the I2C port (as returned by the i2c_open function,
     ///                    see I2C-Wrapper.h).
-    /// \param[in] address I2C address of the ServoDriver.
     /// \returns   TRUE on success, FALSE otherwise.
-	gboolean colorSensor_init(ColorSensorTCS3472 *sensor, I2CAdapter *adapter, guint8 address);
+	gboolean colorSensor_init(ColorSensorTCS3472 *sensor, I2CAdapter *adapter);
 
 	/// \brief Set sensor integration time.
     ///
