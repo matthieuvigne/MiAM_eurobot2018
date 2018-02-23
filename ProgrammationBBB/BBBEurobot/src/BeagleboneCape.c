@@ -49,32 +49,32 @@ gboolean isEurobotEnabled()
 void BBB_enableCape()
 {
 	// Check if the overlay is already enabled.
-	if(isEurobotEnabled())
-		return;
-
-	// Else, let us first check that the overlay file exists.
-	gchar *overlayFile = g_strdup_printf("/lib/firmware/Eurobot-00A0.dtbo");
-	if(g_file_test(overlayFile, G_FILE_TEST_EXISTS) == FALSE)
-	{
-		printf("Enabling serial ports failed: cannot find overlay (%s).\n", overlayFile);
-		exit(0);
-	}
-	g_free(overlayFile);
-	// Enable the overlay.
-	system("echo Eurobot > /sys/devices/bone_capemgr.9/slots");
-
-	// Check that the overlay is indeed enabled.
 	if(!isEurobotEnabled())
 	{
-		printf("Enabling serial ports failed: unknown error.\n");
-		exit(0);
+		// Else, let us first check that the overlay file exists.
+		gchar *overlayFile = g_strdup_printf("/lib/firmware/Eurobot-00A0.dtbo");
+		if(g_file_test(overlayFile, G_FILE_TEST_EXISTS) == FALSE)
+		{
+			printf("Enabling serial ports failed: cannot find overlay (%s).\n", overlayFile);
+			exit(0);
+		}
+		g_free(overlayFile);
+		// Enable the overlay.
+		system("echo Eurobot > /sys/devices/bone_capemgr.9/slots");
+
+		// Check that the overlay is indeed enabled.
+		if(!isEurobotEnabled())
+		{
+			printf("Enabling serial ports failed: unknown error.\n");
+			exit(0);
+		}
 	}
 
 	// Serial ports are enabled, nothing else to be done there.
 	// Analog ports do not need to be enable.
 	// Set all exposed GPIOs as input, except LEDs which should be outputs, set to low.
 	for(int i = 0; i < CAPE_N_DIGITAL; i++)
-		gpio_exportPin(CAPE_DIGITAL[i], "in");
+		pio_exportPin(CAPE_DIGITAL[i], "in");
 
 	for(int i = 0; i < CAPE_N_LED; i++)
 	{

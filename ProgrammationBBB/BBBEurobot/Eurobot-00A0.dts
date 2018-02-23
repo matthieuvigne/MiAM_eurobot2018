@@ -6,19 +6,24 @@
  *  - SPI0-1 0 and 1 on pins 28 (CS0) 29 (DInput) 30 (DOutput) 31 (CLK) 42 (CS1)
  *  - I2C-1 on pins 19 (SCL) and 20 (SDA)
  *  - I2C-2 on pins 24 (SCL) and 26 (SDA)
- *  - GPIO 30 as input with pullup
- *  - GPIO 60 as input with pulldown
- *  - GPIO 31 as output
- * 
+ *  - GPIO 67-69-68-45-44-26-47-46 as input with pullup
+ *  - GPIO 46-47 as output
+ *  - all 7 analog input are enabled
+ *
  * Note that the /dev/* names do not match those of the prots. For now:
  *  - I2C 1 maps to /dev/i2c-2
  *  - I2C 2 maps to /dev/i2c-1
  *  - SPI 0.0 maps to /dev/spidev1.0
  *  - SPI 1.0 maps to /dev/spidev2.0
  *  - SPI 1.1 maps to /dev/spidev2.1
+ *
+ * To change I2C frequency, please look at am335x-boneblack.dts.
  * To get pin offset and pin mode values, see for example:
- * http://www.embedded-things.com/bbb/beaglebone-black-pin-mux-spreadsheet/	
- */ 
+ * http://www.embedded-things.com/bbb/beaglebone-black-pin-mux-spreadsheet/
+ *
+ * To compile this file run:
+ * dtc -O dtb -o Eurobot-00A0.dtbo -b 00 -@ Eurobot-00A0.dts
+ */
 /dts-v1/;
 /plugin/;
 
@@ -29,9 +34,9 @@
     /* identification */
     part-number = "eurobot";
 	version = "00A0";
-	
+
 	/* Define pins with exclusive use */
-	exclusive-use = 
+	exclusive-use =
 		"P9.11",
 		"P9.12",
 		"P9.13",
@@ -49,6 +54,13 @@
 		"P9.30",
 		"P9.31",
 		"P9.42",
+		"P9.39",
+		"P9.40",
+		"P9.37",
+		"P9.38",
+		"P9.33",
+		"P9.36",
+		"P9.35",
 		"P8.7",
 		"P8.8",
 		"P8.9",
@@ -62,7 +74,7 @@
 		"i2c2",
 		"spi0",
 		"spi1";
-	
+
 	/* Define pin usage*/
     fragment@0 {
         target = <&am33xx_pinmux>;
@@ -114,7 +126,7 @@
             };
         };
     };
-    
+
 	/* SPI0*/
 	fragment@1 {
         target = <&spi0>;
@@ -133,7 +145,7 @@
             };
         };
     };
-   
+
 	/* SPI1*/
    fragment@2 {
     target = <&spi1>;	/* spi1 is numbered correctly */
@@ -154,7 +166,7 @@
 	reg = <0>;
 	spi-max-frequency = <16000000>;
 	spi-cpol;
-	spi-cpha;          
+	spi-cpha;
       };
 
       spi1@1 {
@@ -167,10 +179,10 @@
 	spi-cpha;
       };
 
-    }; 
     };
-    
-    
+    };
+
+
     /* I2C1*/
     fragment@4 {
         target = <&i2c1>;
@@ -182,7 +194,7 @@
              pinctrl-0 = <&i2c1_pins>;
         };
     };
-    
+
     /* I2C2*/
     fragment@5 {
         target = <&i2c2>;
@@ -194,7 +206,7 @@
              pinctrl-0 = <&i2c2_pins>;
         };
     };
-    
+
     /* GPIO*/
     fragment@6 {
         target = <&ocp>;
@@ -207,4 +219,19 @@
             };
         };
     };
+
+    /* ADC */
+    fragment@7 {
+		target = <&tscadc>;
+		__overlay__ {
+
+			status = "okay";
+			adc {
+				ti,adc-channels = <0 1 2 3 4 5 6>;
+				ti,chan-step-avg = <0x16 0x16 0x16 0x16 0x16 0x16 0x16>;
+				ti,chan-step-opendelay = <0x98 0x98 0x98 0x98 0x98 0x98 0x98>;
+				ti,chan-step-sampledelay = <0x0 0x0 0x0 0x0 0x0 0x0 0x0>;
+			};
+		};
+};
 };

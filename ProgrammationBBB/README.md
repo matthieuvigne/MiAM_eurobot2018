@@ -1,5 +1,5 @@
 # ProgrammationBBB
-Ce dossier contient le code de la Beaglebone embarquée sur le robot. Il contient un dossier BBBEurobot, contenant une 
+Ce dossier contient le code de la Beaglebone embarquée sur le robot. Il contient un dossier BBBEurobot, contenant une
 bibliothèque de fonctions utilitaires pour la Beaglebone, et d'un ensemble de projets indépendants, le plus souvent
 utilisant cette bibliothèque :
  - TestADNS : un simple code de test du capteur de souris ADNS9800.
@@ -13,7 +13,7 @@ pour les compiler, et permet de le faire même en l'absence de Beaglebone.
 Pour cela, il est nécessaire d'avoir:
  - un cross-compilateur C vers arm, arm-linux-gnueabihf-gcc (à utiliser à la place du gcc installé sur votre ordinateur)
  - la glib-2.0 cross-compilé pour arm (avec le compilateur précédent). La [glib](https://developer.gnome.org/glib/) est 4
- une bibliothèque bas-niveau fournissant un ensemble de fonctions très diverses et très utiles ! L'utiliser permet de 
+ une bibliothèque bas-niveau fournissant un ensemble de fonctions très diverses et très utiles ! L'utiliser permet de
  limiter les dépendances externes (c'est même la seule pour le moment).
 
 Pour installer et configurer ces deux éléments, référez-vous au document SetupCrossCompilation.pdf.
@@ -35,7 +35,7 @@ l'y installer (par exemple dans `/home/<username>/eurobotInstall`) : soit `<inst
 Pour compiler et installer la bibliothèque, cmake est utilisé. Créez un répertoire `build` pour la compiler, puis faites:
 
 `
-cmake /path/to/BBBEurobot -DCAMKE_INSTALL_PREFIX=<installPath>
+cmake /path/to/BBBEurobot -DCMAKE_INSTALL_PREFIX=<installPath>
 make
 make install
 `
@@ -57,3 +57,12 @@ export PKG_CONFIG_PATH=<installPath>/lib/pkgconfig
 `
 
 Il faut ensuite relancer le terminal pour que le changement prenne effet (ou bien exécuter `source ~/.bashrc`).
+
+## Usage
+
+BBB-Eurobot relies on a device tree overlay (DTO) file to configure the Beaglebone serial ports and GPIO.
+This file is called Eurobot-00A0.dts, and can be found in the library folder (BBB-Eurobot).
+To use is, copy this file to the Beaglebone, compile it and copy it to /lib/firmware.
+dtc -O dtb -o Eurobot-00A0.dtbo -b 00 -@ Eurobot-00A0.dts
+cp Eurobot-00A0.dtbo /lib/firmware
+This file is persitent on the Beaglebone, so this only needs to be done once (as long as the file isn't updated.

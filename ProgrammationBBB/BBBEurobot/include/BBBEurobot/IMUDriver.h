@@ -12,8 +12,9 @@
 	/// IMU structure.
 	typedef struct {
 		I2CAdapter *adapter; ///< Pointer to the I2C port being used.
-		guint8 gyroAddress;	 ///< Gyroscope I2C address.
-		guint8 accelAddress;	 ///< Accelerometer I2C address.
+		guint8 imuAddress;	///< IMU (accel + gyro) I2C address.
+		guint8 magnetoAddress;	///< Magnetometer I2C address.
+		gboolean magnetoEnabled;	///< If the magnetometer is enabled or not.
 	}IMU;
 
 	/// \brief Initialize IMU structure.
@@ -23,34 +24,38 @@
     /// \param[out] imu The IMU structure, to be used whenever communication with the IMU.
     /// \param[in] adapter Pointer to a valid I2CAdapter to choose the I2C port (as returned by the i2c_open function,
     ///                    see I2C-Wrapper.h).
-    /// \param[in] gyroAddress I2C address of the gyroscope.
-    /// \param[in] accelAddress I2C address of the accelerometer.
+    /// \param[in] imuAddress I2C address of the imu.
+    /// \param[in] magnetoAddress I2C address of the magnetometer.
+    /// \param[in] enableMagneto If false, the magnetometer chip will remain in standby mode. Calling any getMagneto...
+    ///            function will then return 0
     /// \returns   TRUE on success, FALSE otherwise.
-	gboolean imu_init(IMU *imu, I2CAdapter *adapter, guint8 gyroAddress, guint8 accelAddress);
+	gboolean imu_init(IMU *imu, I2CAdapter *port, int imuAddress, int magnetoAddress, gboolean enableMagneto);
 
 	/// \brief Calls imu_init with the default sensor I2C addresses.
     ///
-	static inline gboolean imu_initDefault(IMU *imu, I2CAdapter *adapter){return imu_init(imu, adapter, 0b1101011, 0b0011101);}
-
+	static inline gboolean imu_initDefault(IMU *imu, I2CAdapter *adapter, gboolean enableMagneto)
+	{
+		return imu_init(imu, adapter, 0b1101011, 0b00011110, enableMagneto);
+	}
 
 	/// \brief Get gyroscope reading along X axis.
     ///
     /// \param[in] imu The IMU structure to use for communication.
-    /// \returns Gyroscope reading along X, in deg/s.
+    /// \returns Gyroscope reading along X, in rad/s.
 	double imu_gyroGetXAxis(IMU imu);
 
 
 	/// \brief Get gyroscope reading along Y axis.
     ///
     /// \param[in] imu The IMU structure to use for communication.
-    /// \returns Gyroscope reading along Y, in deg/s.
+    /// \returns Gyroscope reading along Y, in rad/s.
 	double imu_gyroGetYAxis(IMU imu);
 
 
 	/// \brief Get gyroscope reading along Z axis.
     ///
     /// \param[in] imu The IMU structure to use for communication.
-    /// \returns Gyroscope reading along Z, in deg/s.
+    /// \returns Gyroscope reading along Z, in rad/s.
 	double imu_gyroGetZAxis(IMU imu);
 
 
@@ -58,9 +63,9 @@
 	/// \brief Get all gyroscope readings at once.
 	///
     /// \param[in] imu The IMU structure to use for communication.
-    /// \param[out] x Gyroscope reading along X, in deg/s.
-    /// \param[out] y Gyroscope reading along Y, in deg/s.
-    /// \param[out] z Gyroscope reading along Z, in deg/s.
+    /// \param[out] x Gyroscope reading along X, in rad/s.
+    /// \param[out] y Gyroscope reading along Y, in rad/s.
+    /// \param[out] z Gyroscope reading along Z, in rad/s.
 	void imu_gyroGetValues(IMU imu, double *x, double *y, double *z);
 
 
