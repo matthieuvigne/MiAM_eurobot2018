@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <string.h>
 
-gboolean i2c_open(I2CAdapter *adapter, gchar *portName)
+gboolean i2c_open(I2CAdapter *adapter, const gchar *portName)
 {
 	adapter->file = open(portName, O_RDWR);
 	g_mutex_init(&(adapter->portMutex));

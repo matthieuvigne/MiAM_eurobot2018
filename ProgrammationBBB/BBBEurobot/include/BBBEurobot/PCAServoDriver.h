@@ -10,7 +10,8 @@
 	/// Led driver structure.
 	typedef struct {
 		I2CAdapter *adapter;		///< I2C port file descriptor.
-		guint8 address;	///< Servo driver address.
+		guint8 address;				///< Servo driver address.
+		int clockFrequency;			///< Device clock frequency in Hz (internal oscillator at 25MHz).
 	}ServoDriver;
 
 
@@ -22,8 +23,16 @@
     /// \param[in] adapter Pointer to a valid I2CAdapter to choose the I2C port (as returned by the i2c_open function,
     ///                    see I2C-Wrapper.h).
     /// \param[in] address I2C address of the ServoDriver.
+    /// \param[in] clockFrequency clock frequency in Hz (either for using external clock, or compensating errors of up
+    ///			   to 8% seen on the internal clock - this requires component-specific tuning).
     /// \returns   TRUE on success, FALSE otherwise.
-	gboolean servoDriver_init(ServoDriver *driver, I2CAdapter *adapter, guint8 address);
+	gboolean servoDriver_init(ServoDriver *driver, I2CAdapter *adapter, guint8 address, int clockFrequency);
+
+	/// \brief Call servoDriver_init with default i2c address (the one implemented in ServoDriver board).
+	static inline gboolean servoDriver_initDefault(ServoDriver *driver, I2CAdapter *adapter, int clockFrequency)
+	{
+		return servoDriver_init(driver, adapter, 0x53, clockFrequency);
+	}
 
 	/// \brief Set position of a servo.
     ///

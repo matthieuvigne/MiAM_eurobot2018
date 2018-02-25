@@ -10,7 +10,7 @@ const gchar* SPI_10 = "/dev/spi2.0";
 const gchar* SPI_11 = "/dev/spi2.1";
 const gchar* I2C_1 = "/dev/i2c-1";
 const gchar* I2C_2 = "/dev/i2c-2";
-const int CAPE_ANALOG[CAPE_N_ANALOG] = {0, 1, 2, 3, 6, 5, 4};
+const int CAPE_ANALOG[CAPE_N_ANALOG] = {0, 1, 2, 3, 4, 5, 6};
 const int CAPE_DIGITAL[CAPE_N_DIGITAL] = {66, 67, 69, 68, 45, 44, 26};
 const int CAPE_LED[CAPE_N_LED] = {47, 46};
 
@@ -74,7 +74,7 @@ void BBB_enableCape()
 	// Analog ports do not need to be enable.
 	// Set all exposed GPIOs as input, except LEDs which should be outputs, set to low.
 	for(int i = 0; i < CAPE_N_DIGITAL; i++)
-		pio_exportPin(CAPE_DIGITAL[i], "in");
+		gpio_exportPin(CAPE_DIGITAL[i], "in");
 
 	for(int i = 0; i < CAPE_N_LED; i++)
 	{

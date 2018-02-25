@@ -21,7 +21,7 @@
     /// \param[in] adapter An I2CAdapter structure to fill.
     /// \param[in] portName Name of the I2C port to use (in the file system, i.e. a string "/dev/i2c-x").
 	/// \returns TRUE on success, FALSE on failure.
-	gboolean i2c_open(I2CAdapter *adapter, gchar *portName);
+	gboolean i2c_open(I2CAdapter *adapter, const gchar *portName);
 
 
 	/// \brief Write data to an I2C register
