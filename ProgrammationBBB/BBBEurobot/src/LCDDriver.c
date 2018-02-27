@@ -47,36 +47,12 @@ int rw_pin = 14;
 int enable_pin = 13;
 int data_pins[4] = {12, 11, 10, 9};
 
-int displayfunction = LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS;
-int displaycontrol = 0;
-int displaymode = 0;
-
 void lcd_pulseEnable(LCD lcd)
 {
-  mpc_digitalWrite(lcd, enable_pin, 1);
-  g_usleep(2);    // enable pulse must be >450ns
-  mpc_digitalWrite(lcd, enable_pin, 0);
-  g_usleep(40);   // commands need > 37us to settle
-}
-
-// Send only 4 bits of data : used for initialisation only.
-void lcd_send4bits(LCD lcd, guint8 data)
-{
-	guint16 portValue = mpc_readAll(lcd);
-
-	// Set RS, RW and enable to 0
-	portValue &= ~(1 << rs_pin);
-	portValue &= ~(1 << rw_pin);
-	portValue &= ~(1 << enable_pin);
-
-	// Set data pin : first 4 bits.
-	for (int x = 0; x < 4; x++)
-	{
-		portValue &= ~(1 << data_pins[x]);
-		portValue |= (((data >> x) & 0x01) << data_pins[x]);
-	}
-	mpc_writeAll(lcd, portValue);
-	lcd_pulseEnable(lcd);
+	mpc_digitalWrite(lcd, enable_pin, 1);
+	g_usleep(1);    // enable pulse must be >450ns
+	mpc_digitalWrite(lcd, enable_pin, 0);
+	g_usleep(40);   // commands need > 37us to settle
 }
 
 // Send data over 4bits interface, with specific rs pin value.
@@ -146,42 +122,19 @@ gboolean lcd_init(LCD *lcd, I2CAdapter *adapter, int address)
 	pinValue = pinValue | (0b111 << 6);
 	mpc_writeAll(*lcd, pinValue);
 
-	// Put the LCD into 4 bit mode : see HD44780 datasheet, figure 24 pg. 46.
-	// This is the only time we do "half transactions" of only 4 bits.
+	// Reset LCD into 4 bit mode : see HD44780 datasheet, figure 24 pg. 46.
+	lcd_sendCommand(*lcd, 0x33);
+	lcd_sendCommand(*lcd, 0x32);
 
-
-	lcd_send4bits(*lcd, 0x03);
-	g_usleep(4500);
-	lcd_send4bits(*lcd, 0x03);
-	g_usleep(4500);
-	lcd_send4bits(*lcd, 0x03);
-	g_usleep(150);
-	lcd_send4bits(*lcd, 0x02);
-	g_usleep(150);
-	lcd_sendCommand(*lcd, LCD_FUNCTIONSET | displayfunction);
-	g_usleep(20000);
-
-	displaycontrol = LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF;
-
-	lcd_sendCommand(*lcd, LCD_DISPLAYCONTROL | displaycontrol);
+	// Set display mode.
+	lcd_sendCommand(*lcd, LCD_FUNCTIONSET | LCD_4BITMODE | LCD_2LINE | LCD_5x8DOTS);
+	// Turn on display, disable cursor and blink.
+	lcd_sendCommand(*lcd, LCD_DISPLAYCONTROL | LCD_DISPLAYON | LCD_CURSOROFF | LCD_BLINKOFF);
+	// Set the entry mode
+	lcd_sendCommand(*lcd, LCD_ENTRYMODESET | LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT);
 
 	// Clear LCD display.
 	lcd_clear(*lcd);
-
-    int displaymode = LCD_ENTRYLEFT | LCD_ENTRYSHIFTDECREMENT;
-	// Set the entry mode
-	lcd_sendCommand(*lcd, LCD_ENTRYMODESET | displaymode);
-
-    lcd_sendCommand(*lcd, LCD_RETURNHOME);  // set cursor position to zero
-	//~ g_usleep(2000);
-	lcd_sendChar(*lcd, 'A');
-	lcd_sendChar(*lcd, 'B');
-	lcd_sendChar(*lcd, 'C');
-    lcd_sendCommand(*lcd, LCD_SETDDRAMADDR | 0x00);  // set cursor position to zero
-    lcd_sendCommand(*lcd, LCD_CURSORSHIFT | LCD_DISPLAYMOVE | LCD_MOVERIGHT);  // set cursor position to zero
-
-	lcd_sendChar(*lcd, 'A');
-	lcd_sendChar(*lcd, 'B');
     return TRUE;
 }
 
@@ -192,18 +145,44 @@ void lcd_clear(LCD lcd)
 
 void lcd_setText(LCD lcd, gchar *text, int line)
 {
-	if(line < 0)
-		line = 0;
-	if(line > 1)
-		line  = 1;
+	// If line is not zero, set offset to write to line 1.
+	if(line != 0)
+		line  = 0x40;
 	// Go to beginning of line.
-	lcd_sendCommand(lcd, LCD_SETDDRAMADDR | 0x00);
+	lcd_sendCommand(lcd, LCD_SETDDRAMADDR | line);
+	int stringLength = 16;
 	for(int x = 0; x < 16; x++)
 	{
 		if(text[x] == '\0')
+		{
+			stringLength = x;
 			break;
+		}
 		lcd_sendChar(lcd, text[x]);
 	}
+	// Pad string with spaces if needed.
+	for(int x = stringLength; x < 16; x++)
+		lcd_sendChar(lcd, ' ');
+}
+
+
+void lcd_setTextCentered(LCD lcd, gchar *text, int line)
+{
+	// Find length of string.
+	int stringLength = 0;
+	for(int x = 0; x < 16; x++)
+	{
+		if(text[x] == '\0')
+		{
+			stringLength = x;
+			break;
+		}
+	}
+	// Compute number of space needed - on odd number the string will be left-aligned.
+	int numberOfSpaces = (16 - stringLength) / 2;
+	gchar *centeredText = g_strdup_printf("%*c%s", numberOfSpaces, ' ', text);
+	lcd_setText(lcd, centeredText, line);
+	g_free(centeredText);
 }
 
 

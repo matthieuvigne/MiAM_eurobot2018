@@ -40,14 +40,25 @@
 	/// \param[in] lcd A valid lcd structure.
 	void lcd_clear(LCD lcd);
 
-	/// \brief Set a line of the LCD screen.
-	/// \details Note that this function only overwrites screen content, but does not earse it.
+	/// \brief Set the text of a given LCD line, left-aligned.
+	/// \note  Writing a full line to the LCD currently takes about 70ms.
 	///
 	/// \param[in] lcd A valid lcd structure.
 	/// \param[in] text Text to display. Only the first 16 characters will fit the screen.
-	///                  The string should be null-terminated, otherwise random garbage will be displayed.
-	/// \param[in] line Line number (0 or 1). For now, only line 0 works.
+	///                 The string should be null-terminated, otherwise random garbage will be displayed.
+	///					The text is left-aligned and padded by spaces to clear the display line.
+	/// \param[in] line Line number (0 or 1).
 	void lcd_setText(LCD lcd, gchar *text, int line);
+
+	/// \brief Set the text of a given LCD line, centering it.
+	/// \note  Writing a full line to the LCD currently takes about 70ms.
+	///
+	/// \param[in] lcd A valid lcd structure.
+	/// \param[in] text Text to display. Only the first 16 characters will fit the screen.
+	///                 The string should be null-terminated, otherwise it will not be centered correctly,
+	///					and garbage will be displayed.
+	/// \param[in] line Line number (0 or 1).
+	void lcd_setTextCentered(LCD lcd, gchar *text, int line);
 
 	/// \brief Set LCD backlight
 	///
