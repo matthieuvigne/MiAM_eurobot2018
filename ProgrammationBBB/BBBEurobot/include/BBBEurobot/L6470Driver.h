@@ -9,25 +9,25 @@
 
 	#include <stdint.h>
 	#include <glib.h>
-	
-	
+
+
 	/// L6470 structure.
 	typedef struct
 	{
 		gchar *portName;	///< String representing the name (in the file system) of the SPI port. This must be set by hand before using the structure.
 		int port;			///< File descriptor of the SPI port.
-		int speed;			///< Communication speed. This must be set by hand before using the structure.
+		int frequency;		///< SPI clock frequency, in Hz. This is set by default to 800kHz (100000byte/s), but can be changed if needed.
 	}L6470;
-	
+
 	/// \brief Initialize the L6470 structure.
-	/// \details This function only sets the structure correctly, but does not perform any operation on the 
+	/// \details This function only sets the structure correctly, but does not perform any operation on the
 	///          SPI port. For this reason, it cannot detect a configuration failure, and has no return value.
 	///
 	/// \param[out] l A L6470 structure to use to talk to the targeted motor.
     /// \param[in] portName Name of the port, in the file system (i.e. a string "/dev/spidevx").
     /// \param[in] speed Communication speed.
-	void L6470_initStructure(L6470 *l, gchar *portName, int speed);
-	
+	void L6470_initStructure(L6470 *l, gchar *portName);
+
 	/// \brief Initialize the motor driver.
     ///
     /// \details This function prepares the motor driver for motion, by defining the motor speed, acceleration and
@@ -40,8 +40,8 @@
     /// \param[in] acc Target motor acceleration, in steps/s^2 (from 14.55 to 59590, resolution 14.55 step/s^2).
     /// \param[in] dec Target motor deceleration, in steps/s^2 (from 14.55 to 59590, resolution 14.55 step/s^2).
 	void L6470_initMotion(L6470 l, int maxSpeed, int accel, int decel);
-	
-	
+
+
 	/// \brief Define BEMF compensation and target current constants.
     ///
     /// \details This stepper motor includes a back-electromagnetic force compensation. To tune it, it needs informations
@@ -55,89 +55,89 @@
     /// \param[in] st_slp Value of the SPIN_ST_SLP register.
     /// \param[in] slp_acc Value of the SPIN_FN_SLP_ACC and SPIN_FN_SLP_DEC registers.
 	void L6470_initBEMF(L6470 l, uint32_t k_hld, uint32_t k_mv, uint32_t int_spd, uint32_t st_slp, uint32_t slp_acc);
-	
-	
+
+
 	/// \brief Read a parameter from the motor controler.
     ///
     /// \param[in] l A valid L6470 structure.
     /// \param[in] param The parameter to read.
     /// \returns The current value of param.
 	uint32_t L6470_getParam(L6470 l, uint8_t param);
-	
-	
+
+
 	/// \brief Get current motor position.
     ///
     /// \param[in] l A valid L6470 structure.
     /// \returns The current motor position, in steps.
 	int32_t L6470_getPosition(L6470 l);
-	
-	
+
+
 	/// \brief Set current motor speed.
     ///
     /// \param[in] l A valid L6470 structure.
-    /// \param[in] speed Current motor speed, in steps/s (between -15625 and 156250). 
+    /// \param[in] speed Current motor speed, in steps/s (between -15625 and 156250).
     ///            Value will be clamped internally by the maximum speed.
 	void L6470_setSpeed(L6470 l, int speed);
-	
-			
+
+
 	/// \brief Set motor max speed.
     ///
-    /// \param[in] l A valid L6470 structure. 
+    /// \param[in] l A valid L6470 structure.
     /// \param[in] maxSpeed Maximum motor speed, in steps/s (from 15.25 to 15610, resolution 15.25 step/s).
     /// \param[in] acc Target motor acceleration, in steps/s^2 (from 14.55 to 59590, resolution 14.55 step/s^2).
     /// \param[in] dec Target motor deceleration, in steps/s^2 (from 14.55 to 59590, resolution 14.55 step/s^2).
 	void L6470_setVelocityProfile(L6470 l, int maxSpeed, int accel, int decel);
-	
-	
+
+
 	/// \brief Perform a soft motor stop.
-	/// \details A soft stop means that the motor will decelerate at given deceleration until it stops (contrary to a 
+	/// \details A soft stop means that the motor will decelerate at given deceleration until it stops (contrary to a
 	///			 hard stop where the motor stops instantaneously). Only soft stop is exposed to prevent damage to the
 	///			 motor.
     ///
     /// \param[in] l A valid L6470 structure.
-	void L6470_softStop(L6470 l);					
-	
-	
+	void L6470_softStop(L6470 l);
+
+
 	/// \brief Perform a hard motor stop: motor will try to stop instantaneously.
     /// \note Hard stopping may damage motor or electronics. softStop is the function that should normally be called.
     ///
     /// \param[in] l A valid L6470 structure.
 	void L6470_hardStop(L6470 l);
-	
-	
+
+
 	/// \brief Get the status of the motor controler.
     ///
     /// \param[in] l A valid L6470 structure.
 	uint32_t L6470_getStatus(L6470 l);
-	
-	
+
+
 	/// \brief Get the last error read from the motor controller.
     ///
     /// \param[in] l A valid L6470 structure.
 	uint32_t L6470_getError(L6470 l);
-	
-	
+
+
 	/// \brief Place the motor in a high impedance state. The shaft will now spin freely.
     ///
     /// \param[in] l A valid L6470 structure.
 	void L6470_highZ(L6470 l);
-	
-	
+
+
 	/// \brief Move the motor a desired number of steps.
     ///
     /// \param[in] l A valid L6470 structure.
     /// \param[in] pos The number of steps to move the motor (negative means backward motion).
 	void L6470_goToPosition(L6470 l, int32_t pos);
-	
-	
+
+
 	/// \brief Returns TRUE if the motor is currently moving.
 	/// \details This functions can be used to wait for the motor to finish its motion before moving on in the code.
 	///
     /// \param[in] l A valid L6470 structure.
     /// \returns TRUE if motor is moving.
 	gboolean L6470_isBusy(L6470 l);
-	
-	
+
+
 	// Typedef for setting L6470 registers
 	typedef enum DSPIN_OVERCURRENT_CONST
 	{
@@ -186,7 +186,7 @@
 		//
 		dSPIN_STEP_MODE_SYNC_EN	    = 0x80,  // Mask for this bit
 		dSPIN_SYNC_EN               = 0x80,
-		
+
 		//  Define the SYNC_SEL modes. The clock output is defined by
 		//  the full-step frequency and the value in these bits- see the datasheet
 		//  for a matrix describing that relationship (page 46).
@@ -235,7 +235,7 @@
 		dSPIN_CONFIG_EXT_16MHZ_OSCOUT_INVERT = 0x000D, // Ext 16MHz driven, out inv
 		dSPIN_CONFIG_EXT_24MHZ_OSCOUT_INVERT = 0x000E, // Ext 24MHz driven, out inv
 		dSPIN_CONFIG_EXT_32MHZ_OSCOUT_INVERT = 0x000F, // Ext 32MHz driven, out inv
-		
+
 		// Configure the functionality of the external switch input
 		//
 		dSPIN_CONFIG_SW_MODE                 = 0x0010, // Mask for this bit.

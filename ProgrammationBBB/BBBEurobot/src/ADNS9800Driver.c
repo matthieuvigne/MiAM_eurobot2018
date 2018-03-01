@@ -94,13 +94,13 @@ int openBus(ADNS9800 a)
         return -1 ;
     }
 
-    if (ioctl (a.port, SPI_IOC_WR_MAX_SPEED_HZ, &a.speed)   < 0)
+    if (ioctl (a.port, SPI_IOC_WR_MAX_SPEED_HZ, &a.frequency)   < 0)
     {
         printf("Error configuring port %s %d\n", a.portName, errno);
         return -1 ;
     }
 
-    if (ioctl (a.port, SPI_IOC_RD_MAX_SPEED_HZ, &a.speed)   < 0)
+    if (ioctl (a.port, SPI_IOC_RD_MAX_SPEED_HZ, &a.frequency)   < 0)
     {
         printf("Error configuring port %s %d\n", a.portName, errno);
         return -1 ;
@@ -120,10 +120,10 @@ void ADNS9800_write_register(ADNS9800 a, unsigned char address, unsigned char da
 {
 	// Open SPI port
 	a.port = openBus(a);
-	
+
 	// Set MSI of addresss to 1 to indicate a read operation.
 	address = address | 0x80;
-	
+
 	// Send one transmission containing the two-byte write message
 	unsigned char message[2] = {address, data};
 	struct spi_ioc_transfer spiCtrl;
@@ -131,7 +131,7 @@ void ADNS9800_write_register(ADNS9800 a, unsigned char address, unsigned char da
 	spiCtrl.tx_buf = (unsigned long)&message;
 	spiCtrl.rx_buf = (unsigned long)&message;
     spiCtrl.len = 2;
-    spiCtrl.speed_hz = a.speed;
+    spiCtrl.speed_hz = a.frequency;
     spiCtrl.bits_per_word = 8;
     spiCtrl.delay_usecs = 0;
     spiCtrl.cs_change = TRUE;
@@ -150,11 +150,11 @@ unsigned char ADNS9800_read_register(ADNS9800 a, unsigned char address)
 {
 	// Open SPI port
 	a.port = openBus(a);
-	
+
 	// Set MSI of addresss to 0 to indicate a read operation.
 	address = address & 0x7f;
 	unsigned char response = 0;
-	
+
 	// We will send two transmissions: thie first one will send the address with a read command.
 	// A delay of tsrad delay=100us is then applied, and the response is read by sending zero.
 	struct spi_ioc_transfer spiCtrl[2];
@@ -162,7 +162,7 @@ unsigned char ADNS9800_read_register(ADNS9800 a, unsigned char address)
 	spiCtrl[0].tx_buf = (unsigned long)&address;
 	spiCtrl[0].rx_buf = (unsigned long)&response;
     spiCtrl[0].len = 1;
-    spiCtrl[0].speed_hz = a.speed;
+    spiCtrl[0].speed_hz = a.frequency;
     spiCtrl[0].bits_per_word = 8;
     spiCtrl[0].delay_usecs = 150;
     spiCtrl[0].cs_change = FALSE;
@@ -170,7 +170,7 @@ unsigned char ADNS9800_read_register(ADNS9800 a, unsigned char address)
 	spiCtrl[1].tx_buf = (unsigned long)&address;
 	spiCtrl[1].rx_buf = (unsigned long)&response;
     spiCtrl[1].len = 1;
-    spiCtrl[1].speed_hz = a.speed;
+    spiCtrl[1].speed_hz = a.frequency;
     spiCtrl[1].bits_per_word = 8;
     spiCtrl[1].delay_usecs = 0;
     spiCtrl[1].cs_change = TRUE;
@@ -189,23 +189,23 @@ unsigned char ADNS9800_read_register(ADNS9800 a, unsigned char address)
 gboolean ADNS9800_write_firmware(ADNS9800 a)
 {
 	// Write firmware over SPI, cf p.18 of the datasheet
-	
+
 	// Setup SROM writting
 	ADNS9800_write_register(a, REG_Configuration_IV, 0x02);
-	ADNS9800_write_register(a, REG_SROM_Enable, 0x1d); 
+	ADNS9800_write_register(a, REG_SROM_Enable, 0x1d);
 
 	// Wait for more than one frame period
 	g_usleep(10000);
 
 	// Write 0x18 to SROM_enable to start SROM download
-	ADNS9800_write_register(a, REG_SROM_Enable, 0x18); 
+	ADNS9800_write_register(a, REG_SROM_Enable, 0x18);
 
 	// Load SROM file
 	unsigned char message[firmware_length + 1];
 	message[0] = REG_SROM_Load_Burst | 0x80;
 	for(int x = 0; x < firmware_length; x++)
 		message[x+1] = firmware_data[x];
-	
+
 	// Write it in one SPI transaction, starting at address REG_SROM_Load_Burst.
 	a.port = openBus(a);
 	struct spi_ioc_transfer spiCtrl;
@@ -213,7 +213,7 @@ gboolean ADNS9800_write_firmware(ADNS9800 a)
 	spiCtrl.tx_buf = (unsigned long)&message;
 	spiCtrl.rx_buf = (unsigned long)&message;
     spiCtrl.len = firmware_length + 1;
-    spiCtrl.speed_hz = a.speed;
+    spiCtrl.speed_hz = a.frequency;
     spiCtrl.bits_per_word = 8;
     spiCtrl.delay_usecs = 15;
     spiCtrl.cs_change = FALSE;
@@ -226,50 +226,13 @@ gboolean ADNS9800_write_firmware(ADNS9800 a)
 	closeBus(a.port);
 	// Sleep 160us for SROM reboot
 	g_usleep(160);
-	
+
 	// Check that firmware ID is not 0
 	if(ADNS9800_read_register(a, REG_SROM_ID) == 0)
 	{
 		printf("Error writting SROM firmware.\n");
 		return FALSE;
 	}
-	return TRUE;
-}
-
-gboolean ADNS9800_performStartup(ADNS9800 *a)
-{
-	// Check that communication is working by reading the REG_Product_ID register
-	if(ADNS9800_read_register(*a, REG_Product_ID) != 0x33)
-	{
-		printf("Error reading data from ADNS9800.\n");
-		return FALSE;
-	}
-	
-	//Reste ADNS9800, see datasheet p21
-	ADNS9800_write_register(*a, REG_Power_Up_Reset, 0x5a);
-	g_usleep(50000); 
-	ADNS9800_write_register(*a, REG_Observation, 0x00);
-	g_usleep(10000); 
-	ADNS9800_read_register(*a, REG_Observation);
-	ADNS9800_read_register(*a, REG_Motion);
-	ADNS9800_read_register(*a, REG_Delta_X_L);
-	ADNS9800_read_register(*a, REG_Delta_X_H);
-	ADNS9800_read_register(*a, REG_Delta_Y_L);
-	ADNS9800_read_register(*a, REG_Delta_Y_H);
-	
-	// upload the firmware
-	if(ADNS9800_write_firmware(*a) == FALSE)
-		return FALSE;
-	
-	//enable laser(bit 0 = 0b), in normal mode (bits 3,2,1 = 000b)
-	// reading the actual value of the register is important because the real
-	// default value is different from what is said in the datasheet, and if you
-	// change the reserved bytes (like by writing 0x00...) it would not work.
-	unsigned char laser_ctrl0 = ADNS9800_read_register(*a, REG_LASER_CTRL0);
-	ADNS9800_write_register(*a, REG_LASER_CTRL0, laser_ctrl0 & 0xf0 );
-	
-	// Compute sensor resolution: 200dpi * REG_Configuration_I.
-	a->resolution = 25.4 / (200.0 * (ADNS9800_read_register(*a, REG_Configuration_I) & 0b00111111));
 	return TRUE;
 }
 
@@ -303,13 +266,48 @@ void ADNS9800_getMotion(ADNS9800 a, double *deltaX, double *deltaY)
 	int dx, dy;
 	ADNS9800_getMotionCounts(a, &dx, &dy);
 	// Convert counts to mm : TODO
-	
+
 	*deltaX = a.resolution * dx;
 	*deltaY = a.resolution* dy;
 }
 
-void ANDS9800_initStructure(ADNS9800 *a, gchar *portName, int speed)
+gboolean ANDS9800_init(ADNS9800 *a, gchar *portName)
 {
 	a->portName = g_strdup(portName);
-	a->speed = speed;
+	// Set bus frequency: default 800kHz
+	a->frequency = 800000;
+
+	// Check that communication is working by reading the REG_Product_ID register
+	if(ADNS9800_read_register(*a, REG_Product_ID) != 0x33)
+	{
+		printf("Error reading data from ADNS9800.\n");
+		return FALSE;
+	}
+
+	//Reste ADNS9800, see datasheet p21
+	ADNS9800_write_register(*a, REG_Power_Up_Reset, 0x5a);
+	g_usleep(50000);
+	ADNS9800_write_register(*a, REG_Observation, 0x00);
+	g_usleep(10000);
+	ADNS9800_read_register(*a, REG_Observation);
+	ADNS9800_read_register(*a, REG_Motion);
+	ADNS9800_read_register(*a, REG_Delta_X_L);
+	ADNS9800_read_register(*a, REG_Delta_X_H);
+	ADNS9800_read_register(*a, REG_Delta_Y_L);
+	ADNS9800_read_register(*a, REG_Delta_Y_H);
+
+	// upload the firmware
+	if(ADNS9800_write_firmware(*a) == FALSE)
+		return FALSE;
+
+	//enable laser(bit 0 = 0b), in normal mode (bits 3,2,1 = 000b)
+	// reading the actual value of the register is important because the real
+	// default value is different from what is said in the datasheet, and if you
+	// change the reserved bytes (like by writing 0x00...) it would not work.
+	unsigned char laser_ctrl0 = ADNS9800_read_register(*a, REG_LASER_CTRL0);
+	ADNS9800_write_register(*a, REG_LASER_CTRL0, laser_ctrl0 & 0xf0 );
+
+	// Compute sensor resolution: 200dpi * REG_Configuration_I.
+	a->resolution = 25.4 / (200.0 * (ADNS9800_read_register(*a, REG_Configuration_I) & 0b00111111));
+	return TRUE;
 }

@@ -49,13 +49,13 @@ int openBus(L6470 l)
         return -1 ;
     }
 
-    if (ioctl (l.port, SPI_IOC_WR_MAX_SPEED_HZ, &l.speed)   < 0)
+    if (ioctl (l.port, SPI_IOC_WR_MAX_SPEED_HZ, &l.frequency)   < 0)
     {
         printf("Error configuring port %s %d\n", l.portName, errno);
         return -1 ;
     }
 
-    if (ioctl (l.port, SPI_IOC_RD_MAX_SPEED_HZ, &l.speed)   < 0)
+    if (ioctl (l.port, SPI_IOC_RD_MAX_SPEED_HZ, &l.frequency)   < 0)
     {
         printf("Error configuring port %s %d\n", l.portName, errno);
         return -1 ;
@@ -76,14 +76,14 @@ void closeBus(int port)
 // data from the bus.  The buffer is overwritten with the incoming data.
 int rwData(L6470 l, uint8_t* data, uint8_t len)
 {
-	
+
     struct spi_ioc_transfer spiCtrl;
 
     spiCtrl.tx_buf        = (unsigned long)data;
     spiCtrl.rx_buf        = (unsigned long)data;
     spiCtrl.len           = len;
     spiCtrl.delay_usecs   = 0;
-    spiCtrl.speed_hz      = l.speed;
+    spiCtrl.speed_hz      = l.frequency;
     spiCtrl.bits_per_word = 8;
 	int res = ioctl(l.port, SPI_IOC_MESSAGE(1), &spiCtrl);
     return res;
@@ -112,7 +112,7 @@ uint8_t dspin_xfer(L6470 l, uint8_t data)
 {
 	if(l.port>0)
 		return 0;
-		
+
 	g_mutex_lock (&mut);
     uint8_t data_out = data;
     l.port = openBus(l);
@@ -171,7 +171,7 @@ uint32_t procParam(L6470 l, uint32_t value, uint8_t bit_len)
 
 /*  This function handles the variable length parameters for the various
  *  chip registers.  Since different parameters take different numbers of
- *  bits we select the correct size for the parameter and pass that to the next 
+ *  bits we select the correct size for the parameter and pass that to the next
  *  function along with the proper bit length.
  */
 uint32_t paramHandler(L6470 l, uint8_t param, uint32_t value)
@@ -187,26 +187,26 @@ uint32_t paramHandler(L6470 l, uint8_t param, uint32_t value)
     case dSPIN_ABS_POS:
       ret_val = procParam(l, value, 22);
       break;
-          
+
     //  EL_POS is the current electrical position in the step generation cycle.
     //  It can be set when the motor is not in motion. Value is 0 on power up.
     case dSPIN_EL_POS:
       ret_val = procParam(l, value, 9);
       break;
-          
+
     //  MARK is a second position other than 0 that the motor can be told to go
     //  to. As with ABS_POS, it is 22-bit two's complement. Value is 0 on power
     //  up.
     case dSPIN_MARK:
       ret_val = procParam(l, value, 22);
       break;
-          
+
     //  SPEED contains information about the current speed. It is read-only. It
     //  does NOT provide direction information.
     case dSPIN_SPEED:
       ret_val = procParam(l, 0, 20);
       break;
-          
+
     //  ACC and DEC set the acceleration and deceleration rates. Set ACC to
     //  0xFFF to get infinite acceleration/decelaeration- there is no way to
     //  get infinite deceleration w/o infinite acceleration (except the HARD
@@ -215,18 +215,18 @@ uint32_t paramHandler(L6470 l, uint8_t param, uint32_t value)
     case dSPIN_ACC:
       ret_val = procParam(l, value, 12);
       break;
-          
+
     case dSPIN_DEC:
       ret_val = procParam(l, value, 12);
       break;
-          
+
     //  MAX_SPEED is just what it says: any command which attempts to set the
     //  speed of the motor above this value will simply cause the motor to turn
     //  at this speed. Value is 0x041 on power up.
     case dSPIN_MAX_SPEED:
       ret_val = procParam(l, value, 10);
       break;
-          
+
     //  MIN_SPEED controls two things- the activation of the low-speed
     //  optimization feature and the lowest speed the motor will be allowed to
     //  operate at. LSPD_OPT is the 13th bit, and when it is set, the minimum
@@ -235,14 +235,14 @@ uint32_t paramHandler(L6470 l, uint8_t param, uint32_t value)
     case dSPIN_MIN_SPEED:
       ret_val = procParam(l, value, 12);
       break;
-          
+
     //  FS_SPD register contains a threshold value above which microstepping is
     //  disabled and the dSPIN operates in full-step mode. Defaults to 0x027 on
     //  power up.
     case dSPIN_FS_SPD:
       ret_val = procParam(l, value, 10);
       break;
-          
+
     //  KVAL is the maximum voltage of the PWM outputs. These 8-bit values are
     //  ratiometric representations: 255 for full output voltage, 128 half, etc.
     //  Default is 0x29. The implications of different KVAL settings is too
@@ -252,19 +252,19 @@ uint32_t paramHandler(L6470 l, uint8_t param, uint32_t value)
     case dSPIN_KVAL_HOLD:
       ret_val = dspin_xfer(l, (uint8_t)value);
       break;
-          
+
     case dSPIN_KVAL_RUN:
       ret_val = dspin_xfer(l, (uint8_t)value);
       break;
-          
+
     case dSPIN_KVAL_ACC:
       ret_val = dspin_xfer(l, (uint8_t)value);
       break;
-          
+
     case dSPIN_KVAL_DEC:
       ret_val = dspin_xfer(l, (uint8_t)value);
       break;
-          
+
     //  INT_SPD, ST_SLP, FN_SLP_ACC and FN_SLP_DEC are all related to the back
     //  EMF compensation functionality. Please see the datasheet for details of
     //  this function, it is too complex to discuss here. Default values seem
@@ -272,46 +272,46 @@ uint32_t paramHandler(L6470 l, uint8_t param, uint32_t value)
     case dSPIN_INT_SPD:
       ret_val = procParam(l, value, 14);
       break;
-          
+
     case dSPIN_ST_SLP:
       ret_val = dspin_xfer(l, (uint8_t)value);
       break;
-          
+
     case dSPIN_FN_SLP_ACC:
       ret_val = dspin_xfer(l, (uint8_t)value);
       break;
-          
+
     case dSPIN_FN_SLP_DEC:
       ret_val = dspin_xfer(l, (uint8_t)value);
       break;
-          
+
     //  K_THERM is motor winding thermal drift compensation. Please see the
     //  datasheet for full details on operation- the default value should be
     //  okay for most use.
     case dSPIN_K_THERM:
       ret_val = dspin_xfer(l, (uint8_t)value & 0x0F);
       break;
-          
+
     //  ADC_OUT is a read-only register containing the result of the ADC
     //  measurements. This is less useful than it sounds; see the datasheet
     //  for more information.
     case dSPIN_ADC_OUT:
       ret_val = dspin_xfer(l, 0);
       break;
-          
+
     //  Set the overcurrent threshold. Ranges from 375mA to 6A in steps of
     //  375mA. A set of defined constants is provided for the user's
     //  convenience. Default value is 3.375A- 0x08. This is a 4-bit value.
     case dSPIN_OCD_TH:
       ret_val = dspin_xfer(l, (uint8_t)value & 0x0F);
       break;
-          
+
     //  Stall current threshold. Defaults to 0x40, or 2.03A. Value is from
     //  31.25mA to 4A in 31.25mA steps. This is a 7-bit value.
     case dSPIN_STALL_TH:
       ret_val = dspin_xfer(l, (uint8_t)value & 0x7F);
       break;
-          
+
     //  STEP_MODE controls the microstepping settings, as well as the generation
     //  of an output signal from the dSPIN. Bits 2:0 control the number of
     //  microsteps per step the part will generate. Bit 7 controls whether the
@@ -324,14 +324,14 @@ uint32_t paramHandler(L6470 l, uint8_t param, uint32_t value)
     case dSPIN_STEP_MODE:
       ret_val = dspin_xfer(l, (uint8_t)value);
       break;
-          
+
     // ALARM_EN controls which alarms will cause the FLAG pin to fall. A set of
     //  constants is provided to make this easy to interpret. By default,
     //  ALL alarms will trigger the FLAG pin.
     case dSPIN_ALARM_EN:
       ret_val = dspin_xfer(l, (uint8_t)value);
       break;
-          
+
     //  CONFIG contains some assorted configuration bits and fields. A fairly
     //  comprehensive set of reasonably self-explanatory constants is provided,
     //  but users should refer to the datasheet before modifying the contents
@@ -341,7 +341,7 @@ uint32_t paramHandler(L6470 l, uint8_t param, uint32_t value)
     case dSPIN_CONFIG:
       ret_val = procParam(l, value, 16);
       break;
-          
+
     //  STATUS contains read-only information about the current condition of the
     //  chip. A comprehensive set of constants for masking and testing this
     //  register is provided, but users should refer to the datasheet to ensure
@@ -349,7 +349,7 @@ uint32_t paramHandler(L6470 l, uint8_t param, uint32_t value)
     case dSPIN_STATUS:
       ret_val = procParam(l, 0, 16);
       break;
-          
+
     default:
       ret_val = dspin_xfer(l, (uint8_t)(value));
       break;
@@ -426,7 +426,7 @@ void L6470_setSpeed(L6470 l, int speed)
 		speed = -speed;
 		dir = 0;
 	}
-	
+
     uint32_t regVal = (speed * 67.108864) + 0.5;
     if (regVal > 0xFFFFF) regVal = 0xFFFFF;
     dspin_xfer(l, dSPIN_RUN | dir);
@@ -447,14 +447,14 @@ void L6470_setVelocityProfile(L6470 l, int maxSpeed, int accel, int decel)
     if( regVal > 0x000003FF)
         regVal = 0x000003FF;
     setParam(l, dSPIN_MAX_SPEED, regVal);
-    
+
     // Set max acceleration
     temp = accel * 0.068728;
     regVal = (uint32_t) temp;
     if(regVal > 0x00000FFF)
         regVal = 0x00000FFF;
     setParam(l, dSPIN_ACC, regVal);
-    
+
     // Set max deceleration
     temp = decel * 0.068728;
     regVal = (uint32_t) temp;
@@ -547,8 +547,9 @@ int L6470_isBusy(L6470 l)
 }
 
 
-void L6470_initStructure(L6470 *l, gchar *portName, int speed)
+void L6470_initStructure(L6470 *l, gchar *portName)
 {
 	l->portName = g_strdup(portName);
-	l->speed = speed;
+	// Set bus frequency: default 800kHz
+	l->frequency = 800000;
 }
