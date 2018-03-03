@@ -26,7 +26,7 @@
 	/// \param[out] l A L6470 structure to use to talk to the targeted motor.
     /// \param[in] portName Name of the port, in the file system (i.e. a string "/dev/spidevx").
     /// \param[in] speed Communication speed.
-	void L6470_initStructure(L6470 *l, gchar *portName);
+	void L6470_initStructure(L6470 *l, const gchar *portName);
 
 	/// \brief Initialize the motor driver.
     ///

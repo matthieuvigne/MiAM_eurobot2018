@@ -8,6 +8,7 @@
 #define BBB_CAPE
 
 	#include <glib.h>
+	#include "BBBEurobot/I2C-Wrapper.h"
 
 	#define CAPE_N_ANALOG 7
 	#define CAPE_N_DIGITAL 7
@@ -16,8 +17,8 @@
 	extern const gchar* SPI_0;	///<  First SPI port.
 	extern const gchar* SPI_10; ///<  Second SPI port.
 	extern const gchar* SPI_11; ///<  Third SPI port.
-	extern const gchar* I2C_1; ///<  First I2C port.
-	extern const gchar* I2C_2; ///<  Second I2C port.
+	extern I2CAdapter I2C_1; ///<  First I2C port.
+	extern I2CAdapter I2C_2; ///<  Second I2C port.
 	extern const int CAPE_ANALOG[CAPE_N_ANALOG]; ///<  Analong input.
 	extern const int CAPE_DIGITAL[CAPE_N_DIGITAL]; ///<  Digital GPIO.
 	extern const int CAPE_LED[CAPE_N_LED]; ///<  LED output.

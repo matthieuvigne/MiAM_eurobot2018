@@ -5,11 +5,11 @@
 #include "BBBEurobot/BBBGpio.h"
 
 // See header directly for documentation of these constants.
-const gchar* SPI_0 = "/dev/spi1.0";
-const gchar* SPI_10 = "/dev/spi2.0";
-const gchar* SPI_11 = "/dev/spi2.1";
-const gchar* I2C_1 = "/dev/i2c-1";
-const gchar* I2C_2 = "/dev/i2c-2";
+const gchar* SPI_0 = "/dev/spidev1.0";
+const gchar* SPI_10 = "/dev/spidev2.0";
+const gchar* SPI_11 = "/dev/spidev2.1";
+I2CAdapter I2C_1;
+I2CAdapter I2C_2;
 const int CAPE_ANALOG[CAPE_N_ANALOG] = {0, 1, 2, 3, 4, 5, 6};
 const int CAPE_DIGITAL[CAPE_N_DIGITAL] = {66, 67, 69, 68, 45, 44, 26};
 const int CAPE_LED[CAPE_N_LED] = {47, 46};
@@ -56,7 +56,7 @@ void BBB_enableCape()
 		if(g_file_test(overlayFile, G_FILE_TEST_EXISTS) == FALSE)
 		{
 			printf("Enabling serial ports failed: cannot find overlay (%s).\n", overlayFile);
-			exit(0);
+			exit(-1);
 		}
 		g_free(overlayFile);
 		// Enable the overlay.
@@ -66,11 +66,18 @@ void BBB_enableCape()
 		if(!isEurobotEnabled())
 		{
 			printf("Enabling serial ports failed: unknown error.\n");
-			exit(0);
+			exit(-1);
 		}
 	}
 
-	// Serial ports are enabled, nothing else to be done there.
+	// Open file descriptors for I2C interfaces.
+	gboolean i2cStarted = i2c_open(&I2C_1, "/dev/i2c-1");
+	i2cStarted &= i2c_open(&I2C_2, "/dev/i2c-2");
+	if(!i2cStarted)
+	{
+		printf("Could not open I2C port; perhaps overlay file is invalid ? Exiting...\n");
+		exit(-1);
+	}
 	// Analog ports do not need to be enable.
 	// Set all exposed GPIOs as input, except LEDs which should be outputs, set to low.
 	for(int i = 0; i < CAPE_N_DIGITAL; i++)

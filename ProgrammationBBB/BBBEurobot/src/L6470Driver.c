@@ -1,75 +1,15 @@
 #include "BBBEurobot/L6470Driver.h"
-#include <errno.h>
+#include "BBBEurobot/SPI-Wrapper.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
-#include <fcntl.h>
-#include <unistd.h>
+
 
 // Internal functions: all functions accessible outside of this file are at the end.
 
 // Mutex : for thread safety
 GMutex mut;
-
-//open SPI bus
-int openBus(L6470 l)
-{
-
-    l.port = open(l.portName, O_RDWR) ;
-    if (l.port  < 0)
-    {
-        printf("Error opening SPI bus %s %d\n", l.portName, errno);
-        return -1 ;
-    }
-
-    // Setup the SPI bus with our current parameters
-    int value = 3;
-    if (ioctl (l.port, SPI_IOC_WR_MODE, &value)         < 0)
-    {
-        printf("Error configuring port %s %d\n", l.portName, errno);
-        return -1 ;
-    }
-
-    if (ioctl (l.port, SPI_IOC_RD_MODE, &value)         < 0)
-    {
-        printf("Error configuring port %s %d\n", l.portName, errno);
-        return -1 ;
-    }
-	value = 8;
-    if (ioctl (l.port, SPI_IOC_WR_BITS_PER_WORD, &value) < 0)
-    {
-        printf("Error configuring port %s %d\n", l.portName, errno);
-        return -1 ;
-    }
-
-    if (ioctl (l.port, SPI_IOC_RD_BITS_PER_WORD, &value) < 0)
-    {
-        printf("Error configuring port %s %d\n", l.portName, errno);
-        return -1 ;
-    }
-
-    if (ioctl (l.port, SPI_IOC_WR_MAX_SPEED_HZ, &l.frequency)   < 0)
-    {
-        printf("Error configuring port %s %d\n", l.portName, errno);
-        return -1 ;
-    }
-
-    if (ioctl (l.port, SPI_IOC_RD_MAX_SPEED_HZ, &l.frequency)   < 0)
-    {
-        printf("Error configuring port %s %d\n", l.portName, errno);
-        return -1 ;
-    }
-    return l.port;
-}
-
-
-//close port
-void closeBus(int port)
-{
-    if (port > 0)
-        close(port);
-}
 
 
 //Sends the data contained in the buffer to the bus and reads the incomming
@@ -113,13 +53,13 @@ uint8_t dspin_xfer(L6470 l, uint8_t data)
 	if(l.port>0)
 		return 0;
 
-	g_mutex_lock (&mut);
-    uint8_t data_out = data;
-    l.port = openBus(l);
-    rwData(l, &data_out, 1);
-    closeBus(l.port);
-	g_mutex_unlock (&mut);
-    return data_out;
+	g_mutex_lock(&mut);
+	uint8_t data_out = data;
+	l.port = spi_open(l.portName, l.frequency);
+	rwData(l, &data_out, 1);
+	spi_close(l.port);
+	g_mutex_unlock(&mut);
+	return data_out;
 }
 
 
@@ -547,7 +487,7 @@ int L6470_isBusy(L6470 l)
 }
 
 
-void L6470_initStructure(L6470 *l, gchar *portName)
+void L6470_initStructure(L6470 *l, const gchar *portName)
 {
 	l->portName = g_strdup(portName);
 	// Set bus frequency: default 800kHz

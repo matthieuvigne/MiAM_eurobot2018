@@ -26,7 +26,7 @@
 	/// \param[inout] a An ANDS9800 structure to use to talk to the sensor.
     /// \param[in] portName Name of the port, in the file system (i.e. a string "/dev/spidevx").
     /// \return TRUE on success, FALSE on failure.
-	gboolean ANDS9800_init(ADNS9800 *a, gchar *portName);
+	gboolean ANDS9800_init(ADNS9800 *a, const gchar *portName);
 
 	/// \brief Get the motion of the mouse since the last call, in mouse counts.
 	/// \param[in] a An ANDS9800 structure to use to talk to the sensor.

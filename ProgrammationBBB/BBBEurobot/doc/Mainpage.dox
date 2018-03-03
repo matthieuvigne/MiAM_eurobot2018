@@ -24,6 +24,7 @@ Doxygen main page
 ///		- MCP23017Driver.h: Driver for the MCP23017 I2C port expander (used to talk to the LCD screen).
 ///		- PCA9635Driver.h: Driver for the PCA9635 I2C led driver.
 ///		- PCAServoDriver.h: Driver for the ServoDriver board (using PCA9685 chip to generate servo signals).
+///		- SPI-Wrapper.h: Basic wrapper for SPI communication (might need to be extended...).
 ///		- TCS3472ColorSensorDriver.h: Driver for the TCS3472 light sensor.
 ///	- Higher level files :
 ///		- BeagleboneCape.h: fuctions mapping the code to the exposed output of the PCB.

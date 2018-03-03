@@ -1,12 +1,9 @@
 #include "BBBEurobot/ADNS9800Driver.h"
 #include "BBBEurobot/ADNS9800Firmware.h"
-#include <errno.h>
+#include "BBBEurobot/SPI-Wrapper.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
-#include <fcntl.h>
-#include <unistd.h>
 
 // Registers
 #define REG_Product_ID                           0x00
@@ -57,69 +54,10 @@
 
 
 // Internal functions: all functions accessible outside of this file are at the end.
-
-// Open SPI bus
-int openBus(ADNS9800 a)
-{
-    a.port = open(a.portName, O_RDWR) ;
-    if (a.port  < 0)
-    {
-        printf("Error opening SPI bus %s %d\n", a.portName, errno);
-        return -1 ;
-    }
-
-    // Setup the SPI bus with our current parameters
-    int value = 3;
-    if (ioctl (a.port, SPI_IOC_WR_MODE, &value)         < 0)
-    {
-        printf("Error configuring port %s %d\n", a.portName, errno);
-        return -1 ;
-    }
-
-    if (ioctl (a.port, SPI_IOC_RD_MODE, &value)         < 0)
-    {
-        printf("Error configuring port %s %d\n", a.portName, errno);
-        return -1 ;
-    }
-	value = 8;
-    if (ioctl (a.port, SPI_IOC_WR_BITS_PER_WORD, &value) < 0)
-    {
-        printf("Error configuring port %s %d\n", a.portName, errno);
-        return -1 ;
-    }
-
-    if (ioctl (a.port, SPI_IOC_RD_BITS_PER_WORD, &value) < 0)
-    {
-        printf("Error configuring port %s %d\n", a.portName, errno);
-        return -1 ;
-    }
-
-    if (ioctl (a.port, SPI_IOC_WR_MAX_SPEED_HZ, &a.frequency)   < 0)
-    {
-        printf("Error configuring port %s %d\n", a.portName, errno);
-        return -1 ;
-    }
-
-    if (ioctl (a.port, SPI_IOC_RD_MAX_SPEED_HZ, &a.frequency)   < 0)
-    {
-        printf("Error configuring port %s %d\n", a.portName, errno);
-        return -1 ;
-    }
-    return a.port;
-}
-
-
-//close port
-void closeBus(int port)
-{
-    if (port > 0)
-        close(port);
-}
-
 void ADNS9800_write_register(ADNS9800 a, unsigned char address, unsigned char data)
 {
 	// Open SPI port
-	a.port = openBus(a);
+	a.port = spi_open(a.portName, a.frequency);
 
 	// Set MSI of addresss to 1 to indicate a read operation.
 	address = address | 0x80;
@@ -141,7 +79,7 @@ void ADNS9800_write_register(ADNS9800 a, unsigned char address, unsigned char da
     {
 		printf("SPI error when writing: %d\n", error);
 	}
-	closeBus(a.port);
+	spi_close(a.port);
 	// 120us delay after read command
 	g_usleep(120);
 }
@@ -149,7 +87,7 @@ void ADNS9800_write_register(ADNS9800 a, unsigned char address, unsigned char da
 unsigned char ADNS9800_read_register(ADNS9800 a, unsigned char address)
 {
 	// Open SPI port
-	a.port = openBus(a);
+	a.port = spi_open(a.portName, a.frequency);
 
 	// Set MSI of addresss to 0 to indicate a read operation.
 	address = address & 0x7f;
@@ -180,7 +118,7 @@ unsigned char ADNS9800_read_register(ADNS9800 a, unsigned char address)
     {
 		printf("SPI error when reading: %d\n", error);
 	}
-	closeBus(a.port);
+	spi_close(a.port);
 	// 20us delay after read command
 	g_usleep(20);
 	return response;
@@ -207,7 +145,7 @@ gboolean ADNS9800_write_firmware(ADNS9800 a)
 		message[x+1] = firmware_data[x];
 
 	// Write it in one SPI transaction, starting at address REG_SROM_Load_Burst.
-	a.port = openBus(a);
+	a.port = spi_open(a.portName, a.frequency);
 	struct spi_ioc_transfer spiCtrl;
 	// First element: send address and wait.
 	spiCtrl.tx_buf = (unsigned long)&message;
@@ -223,7 +161,7 @@ gboolean ADNS9800_write_firmware(ADNS9800 a)
     {
 		printf("SPI error when reading: %d\n", error);
 	}
-	closeBus(a.port);
+	spi_close(a.port);
 	// Sleep 160us for SROM reboot
 	g_usleep(160);
 
@@ -271,7 +209,7 @@ void ADNS9800_getMotion(ADNS9800 a, double *deltaX, double *deltaY)
 	*deltaY = a.resolution* dy;
 }
 
-gboolean ANDS9800_init(ADNS9800 *a, gchar *portName)
+gboolean ANDS9800_init(ADNS9800 *a, const gchar *portName)
 {
 	a->portName = g_strdup(portName);
 	// Set bus frequency: default 800kHz
