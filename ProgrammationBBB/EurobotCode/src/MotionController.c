@@ -437,14 +437,19 @@ void *motion_startController()
 	{
 		// Compute new motor input.
 		// Run position estimator.
+		// TODO
 
 		// Wait for loop to match loop frequency.
-		currentTime = g_timer_elapsed(motionTimer, NULL);
+		lastTime = g_timer_elapsed(motionTimer, NULL);
+		currentTime = lastTime;
+
 		while(currentTime - lastTime < LOOP_PERIOD)
 		{
 			currentTime = g_timer_elapsed(motionTimer, NULL);
 			g_usleep(10);
 		}
+		
+		
 	}
 	stopMotors();
 	printf("Motion controller ended.\n");
