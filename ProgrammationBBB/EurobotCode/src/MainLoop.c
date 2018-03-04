@@ -54,20 +54,14 @@ gboolean checkInfrarouge()
 	return TRUE;
 }
 
-// Timer thread.
-// This thread stops the robot after 90 sec.
-void *timerThread()
+// Function that stops the robot.
+gboolean stop_robot()
 {
-	GTimer *matchTimer = g_timer_new();
-	g_timer_start(matchTimer);
-	printf("Match start\n");
-	while(g_timer_elapsed(matchTimer, NULL) < 90.0)
-		g_usleep(10000);
-	printf("Match end\n");
 	// End motion controller to stop the motors.
 	motion_stopController();
 	exit(0);
-	return 0;
+	
+	return TRUE;
 }
 
 // Heartbeat thread.
@@ -156,8 +150,10 @@ int main(int argc, char **argv)
 	initRobot();
 	// Wait for match to start.
 	waitForStart();
-	// Start timer thread
-	g_thread_new("Timer", timerThread, NULL);
+
+	// Set the robot to stop after 90s (90000ms)
+	g_timeout_add(90000, stop_robot, NULL);
+	
 	// Set robot to initial position
 	//~ robot_setPosition(STARTING_POSITION);
 	// Launch the strategy thread
