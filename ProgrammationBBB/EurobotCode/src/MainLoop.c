@@ -17,7 +17,7 @@
 #include "Strategy.h"
 
 
-// Variables to store weather or not the last time we checked, we saw the opponent's robot.
+// Variables to store weather or not the last timerMain we checked, we saw the opponent's robot.
 gboolean oldSensorBack = FALSE;
 gboolean oldSensorFront = FALSE;
 
@@ -34,7 +34,7 @@ gboolean checkInfrarouge()
 	//~ detectionBack = sensorBack && oldSensorBack;
 	//~ oldSensorBack = sensorBack;
 
-	//~ // Same thing at the front, execpt this time we might have two sensors.
+	//~ // Same thing at the front, execpt this timerMain we might have two sensors.
 	//~ gboolean sensorFront = readADC(CAPE_ANALOG[IR_FRONT[0]]) > IR_FRONT_DETECTION;
 	//~ if(IR_FRONT[1] >= 0)
 		//~ sensorFront = sensorFront || readADC(CAPE_ANALOG[IR_FRONT[1]]) > IR_FRONT_DETECTION;
@@ -54,13 +54,17 @@ gboolean checkInfrarouge()
 	return TRUE;
 }
 
+
+GTimer *timerMain;
+
 // Function that stops the robot.
 gboolean stop_robot()
 {
+	printf("%f\n", g_timer_elapsed(timerMain, NULL));
 	// End motion controller to stop the motors.
 	motion_stopController();
 	exit(0);
-	
+
 	return TRUE;
 }
 
@@ -150,17 +154,18 @@ int main(int argc, char **argv)
 	initRobot();
 	// Wait for match to start.
 	waitForStart();
+	timerMain = g_timer_new();
+	g_timer_start(timerMain);
+	// Set the robot to stop after 100s (100000ms)
+	g_timeout_add(100000, stop_robot, NULL);
 
-	// Set the robot to stop after 90s (90000ms)
-	g_timeout_add(90000, stop_robot, NULL);
-	
 	// Set robot to initial position
 	//~ robot_setPosition(STARTING_POSITION);
 	// Launch the strategy thread
 	g_thread_new("Strategy", strategy_runMatch, NULL);
 	g_thread_new("MotionController", motion_startController, NULL);
 
-	// Timeout functions to check on the infrared sensors and update the Kalman estimate.
+	// Timeout functions to check on the infrared sensors.
 	g_timeout_add(40, checkInfrarouge, NULL);
 	// Run glib main loop.
     g_main_loop_run(loop);
