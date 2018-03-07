@@ -428,10 +428,28 @@ void *motion_startController()
 	isMotionControllerRunning = TRUE;
 	printf("Motion controller started.\n");
 
+	// Create log file
+
+	gchar *date = g_date_time_format(g_date_time_new_now_local(), "%Y%m%dT%H%M%SZ");
+	gchar *filename = g_strdup_printf("log%s.csv", date);
+	GIOChannel *logFile = g_io_channel_new_file(filename, "w", NULL);
+	gchar *line = g_strdup_printf("Robot Log: %s\n", date);
+	g_free(date);
+	g_free(filename);
+
+	g_io_channel_write_chars(logFile, line, -1, NULL, NULL);
+	g_io_channel_flush (logFile, NULL);
+	g_free(line);
+
+	g_io_channel_write_chars(logFile, "time,commandVelocityR,commandVelocityL,encoderR,encoderL,gyroX,gyroY,gyroZ,accelX,accelY,accelZ,mouseX,mouseY\n", -1, NULL, NULL);
+	g_io_channel_flush (logFile, NULL);
+
 	// Start timer and enter update loop.
 	GTimer *motionTimer = g_timer_new();
 	double lastTime = 0;
 	double currentTime = 0;
+	int encoder[2] = {0,0};
+
 	g_timer_start(motionTimer);
 	while(isMotionControllerRunning)
 	{
@@ -439,20 +457,59 @@ void *motion_startController()
 		// Run position estimator.
 		// TODO
 
-		// Wait for loop to match loop frequency.
-		lastTime = g_timer_elapsed(motionTimer, NULL);
-		currentTime = lastTime;
+		// Log data
+		int oldEncoder[2];
+		oldEncoder[0] = encoder[0];
+		oldEncoder[1] = encoder[1];
+		encoder[RIGHT] = L6470_getPosition(robotMotors[RIGHT]);
+		encoder[LEFT] = L6470_getPosition(robotMotors[LEFT]);
+		// Sometimes, there are communication errors leading to a 0 encoder value: this loop forces a new read to take place.
+		int retry = 10;
+		while (abs(oldEncoder[LEFT] - encoder[LEFT])  > 100 && retry > 0)
+		{
+			encoder[LEFT] = L6470_getPosition(robotMotors[LEFT]);
+			retry--;
+		}
+		retry = 10;
+		while (abs(oldEncoder[RIGHT] - encoder[RIGHT])  > 100 && retry > 0)
+		{
+			encoder[RIGHT] = L6470_getPosition(robotMotors[RIGHT]);
+			retry--;
+		}
+		double speedR = L6470_getSpeed(robotMotors[RIGHT]);
+		double speedL = L6470_getSpeed(robotMotors[LEFT]);
 
+		double gyroX, gyroY, gyroZ, accelX, accelY, accelZ;
+		imu_gyroGetValues(robotIMU, &gyroX, &gyroY, &gyroZ);
+		imu_accelGetValues(robotIMU, &accelX, &accelY, &accelZ);
+		double mouseX, mouseY;
+		ADNS9800_getMotion(robotMouseSensor, &mouseX, &mouseY);
+
+		gchar *line = g_strdup_printf("%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f\n",
+		                             g_timer_elapsed(motionTimer, NULL),
+		                             speedR, speedL,
+		                             encoder[RIGHT],  encoder[LEFT],
+		                             gyroX, gyroY, gyroZ,
+		                             accelX, accelY, accelZ,
+		                             mouseX, mouseY);
+
+		g_io_channel_write_chars(logFile, line, -1, NULL, NULL);
+		g_io_channel_flush (logFile, NULL);
+		g_free(line);
+
+
+		// Wait for loop to match loop frequency.
+		currentTime = g_timer_elapsed(motionTimer, NULL);
 		while(currentTime - lastTime < LOOP_PERIOD)
 		{
-			currentTime = g_timer_elapsed(motionTimer, NULL);
 			g_usleep(10);
+			currentTime = g_timer_elapsed(motionTimer, NULL);
 		}
-		
-		
+		lastTime = currentTime;
 	}
 	stopMotors();
 	printf("Motion controller ended.\n");
+	g_io_channel_shutdown(logFile, TRUE, NULL);
 	return 0;
 }
 
