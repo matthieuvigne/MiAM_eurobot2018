@@ -83,55 +83,73 @@ void *heartbeatThread()
 
 void initRobot()
 {
-	// TODO
-	gboolean initLCD = lcd_initDefault(&robotLCD, &I2C_1);
+	gboolean isInitSuccessful = TRUE;
+	gboolean initLCD = lcd_initDefault(&robotLCD, &I2C_2);
 	if(!initLCD)
 	{
 		printf("Could not detect LCD display\n");
 		// Can't do much more that turning on the led if we don't have the LCD display.
 		gpio_digitalWrite(CAPE_LED[1], 1);
+		g_usleep(1000000);
 	}
-	gboolean initIMU = imu_initDefault(&robotIMU, &I2C_2, FALSE);
+	isInitSuccessful &= initLCD;
+
+	gboolean initIMU = imu_initDefault(&robotIMU, &I2C_1, FALSE);
 	if(!initIMU)
 	{
 		printf("Could not detect IMU\n");
 		lcd_setText(robotLCD, "IMU init failed", 0);
 		lcd_setBacklight(robotLCD, TRUE, FALSE, FALSE);
+		g_usleep(1000000);
 	}
+	isInitSuccessful &= initIMU;
 
-	gboolean initServo = servoDriver_initDefault(&robotServo, &I2C_2, 27300000);
-	if(!initServo)
-	{
-		printf("Could not detect servo driver\n");
-		lcd_setText(robotLCD, "Servo init failed", 0);
-		lcd_setBacklight(robotLCD, TRUE, FALSE, FALSE);
-	}
+	//~ gboolean initServo = servoDriver_initDefault(&robotServo, &I2C_1, 27300000);
+	//~ if(!initServo)
+	//~ {
+		//~ printf("Could not detect servo driver\n");
+		//~ lcd_setText(robotLCD, "Servo init failed", 0);
+		//~ lcd_setBacklight(robotLCD, TRUE, FALSE, FALSE);
+		//~ g_usleep(1000000);
+	//~ }
+	//~ isInitSuccessful &= initServo;
 
-	gboolean initMouse = ANDS9800_init(&robotMouseSensor, SPI_0);
-	if(!initMouse)
-	{
-		printf("Could not detect mouse sensor\n");
-		lcd_setText(robotLCD, "Mouse init failed", 0);
-		lcd_setBacklight(robotLCD, TRUE, FALSE, FALSE);
-	}
+	//~ gboolean initMouse = ANDS9800_init(&robotMouseSensor, SPI_0);
+	//~ if(!initMouse)
+	//~ {
+		//~ printf("Could not detect mouse sensor\n");
+		//~ lcd_setText(robotLCD, "Mouse init failed", 0);
+		//~ lcd_setBacklight(robotLCD, TRUE, FALSE, FALSE);
+		//~ g_usleep(1000000);
+	//~ }
+	//~ isInitSuccessful &= initMouse;
 
-	gboolean initColor = colorSensor_init(&robotColorSensor, &I2C_2);
-	if(!initColor)
-	{
-		printf("Could not detect color sensor\n");
-		lcd_setText(robotLCD, "Color init failed", 0);
-		lcd_setBacklight(robotLCD, TRUE, FALSE, FALSE);
-	}
+	//~ gboolean initColor = colorSensor_init(&robotColorSensor, &I2C_2);
+	//~ if(!initColor)
+	//~ {
+		//~ printf("Could not detect color sensor\n");
+		//~ lcd_setText(robotLCD, "Color init failed", 0);
+		//~ lcd_setBacklight(robotLCD, TRUE, FALSE, FALSE);
+		//~ g_usleep(1000000);
+	//~ }
+	//~ isInitSuccessful &= initColor;
 
 	// Try motor init - we are more likely to get a failure here, so print in on the first line.
-	gboolean motorInit = motion_initMotors();
-	if(!motorInit)
+	gboolean initMotor = motion_initMotors();
+	if(!initMotor)
 	{
 		printf("Could not init motors: are they turned on ?\n");
 		lcd_setText(robotLCD, "Motor init failed", 1);
 		lcd_setBacklight(robotLCD, TRUE, TRUE, FALSE);
 	}
+	isInitSuccessful &= initMotor;
 
+	if(isInitSuccessful)
+	{
+		printf("Init successful\n");
+		lcd_setText(robotLCD, "Robot init done", 0);
+		lcd_setBacklight(robotLCD, FALSE, TRUE, FALSE);
+	}
 	g_usleep(1000000);
 }
 

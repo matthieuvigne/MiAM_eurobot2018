@@ -14,7 +14,7 @@ void goToPos(int right, int left)
 			printf("Left motor error: %d\n", error);
 		error = L6470_getError(robotMotors[1]);
 		if(error != 0)
-			printf("Left motor error: %d\n", error);
+			printf("Right motor error: %d\n", error);
 	}
 }
 
@@ -25,37 +25,38 @@ void *strategy_runMatch()
 	// Trajecotry for mocap
 
 	// Straight line
-	goToPos(1200, 1200);
-	g_usleep(500000);
-	goToPos(-1200, -1200);
-	g_usleep(500000);
+	goToPos(400, 0);
+	while(TRUE) ;;
+	//~ g_usleep(500000);
+	//~ goToPos(-1200, -1200);
+	//~ g_usleep(500000);
 
-	// Rotation
-	goToPos(800,-800);
-	g_usleep(500000);
-	goToPos(-800,800);
-	g_usleep(500000);
+	//~ // Rotation
+	//~ goToPos(800,-800);
+	//~ g_usleep(500000);
+	//~ goToPos(-800,800);
+	//~ g_usleep(500000);
 
-	// Draw square
-	int squareSize = 1500;
-	int rotationAngle = 400;
+	//~ // Draw square
+	//~ int squareSize = 1500;
+	//~ int rotationAngle = 400;
 
-	for(int i = 0; i < 4; i++)
-	{
-		goToPos(squareSize, squareSize);
-		g_usleep(500000);
-		goToPos(rotationAngle, -rotationAngle);
-		g_usleep(500000);
-	}
-	// Draw square, turning the other direction
+	//~ for(int i = 0; i < 4; i++)
+	//~ {
+		//~ goToPos(squareSize, squareSize);
+		//~ g_usleep(500000);
+		//~ goToPos(rotationAngle, -rotationAngle);
+		//~ g_usleep(500000);
+	//~ }
+	//~ // Draw square, turning the other direction
 
-	for(int i = 0; i < 4; i++)
-	{
-		goToPos(squareSize, squareSize);
-		g_usleep(500000);
-		goToPos(-rotationAngle, rotationAngle);
-		g_usleep(500000);
-	}
+	//~ for(int i = 0; i < 4; i++)
+	//~ {
+		//~ goToPos(squareSize, squareSize);
+		//~ g_usleep(500000);
+		//~ goToPos(-rotationAngle, rotationAngle);
+		//~ g_usleep(500000);
+	//~ }
 
 	printf("Strategy ended\n");
 	return 0;

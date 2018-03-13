@@ -9,7 +9,7 @@ gboolean isMotionControllerRunning;
 // Robot-specific constants.
 
 // Max motor speed, in half counts / s.
-const int MOTOR_MAX_SPEED = 800;
+const int MOTOR_MAX_SPEED = 200;
 
 // Motor current profile constants, for the 42BYGHW810 motor, 1.8A - these values are computed using ST dSPIN utility.
 const int MOTOR_KVAL_HOLD = 0x26;
@@ -92,6 +92,8 @@ void stopMotors()
 {
     L6470_softStop(robotMotors[RIGHT]);
     L6470_softStop(robotMotors[LEFT]);
+	L6470_highZ(robotMotors[RIGHT]);
+	L6470_highZ(robotMotors[LEFT]);
 }
 
 // Callaback function called when this thread is killed.
@@ -114,6 +116,11 @@ gboolean motion_initMotors()
 		printf("Failed to init right motor\n");
 		result =  FALSE;
 	}
+	L6470_highZ(robotMotors[RIGHT]);
+
+	printf("%d\n", L6470_getParam(robotMotors[RIGHT], dSPIN_STEP_MODE));
+	printf("%d\n", L6470_getError(robotMotors[RIGHT]));
+	printf("%d\n", L6470_getError(robotMotors[RIGHT]));
 
 	L6470_initStructure(&robotMotors[LEFT], SPI_11);
     L6470_initMotion(robotMotors[LEFT], MOTOR_MAX_SPEED, 0.5*MOTOR_MAX_SPEED, 0.5*MOTOR_MAX_SPEED);
@@ -124,7 +131,7 @@ gboolean motion_initMotors()
 		result =  FALSE;
 	}
 
-	stopMotors();
+	//~ stopMotors();
 	return result;
 }
 
@@ -483,8 +490,7 @@ void *motion_startController()
 		imu_gyroGetValues(robotIMU, &gyroX, &gyroY, &gyroZ);
 		imu_accelGetValues(robotIMU, &accelX, &accelY, &accelZ);
 		double mouseX, mouseY;
-		ADNS9800_getMotion(robotMouseSensor, &mouseX, &mouseY);
-
+		//~ ADNS9800_getMotion(robotMouseSensor, &mouseX, &mouseY);
 		gchar *line = g_strdup_printf("%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f\n",
 		                             g_timer_elapsed(motionTimer, NULL),
 		                             speedR, speedL,
