@@ -9,6 +9,7 @@
  *  - GPIO 67-69-68-45-44-26-47-46 as input with pullup
  *  - GPIO 46-47 as output
  *  - all 7 analog input are enabled
+ *  - UART 4
  *
  * Note that the /dev/* names do not match those of the prots. For now:
  *  - I2C 1 maps to /dev/i2c-2
@@ -74,7 +75,8 @@
 		"i2c2",
 		"spi0",
 		"spi1",
-		"tscadc";
+		"tscadc",
+		"uart4";
 
 	/* Define pin usage*/
     fragment@0 {
@@ -110,7 +112,7 @@
                                 0x178 0x33      /* P9.20 - SDA - INPUT_PULLUP | MODE3 */
                 >;
             };
-            gpio_pins: gpio_pins {
+			gpio_pins: gpio_pins {
 				pinctrl-single,pins = <
 								/* Exposed GPIO ports*/
                                 0x090 0x37      /* P8.7 - GPIO66 - INPUT_PULLUP | MODE7 */
@@ -123,6 +125,12 @@
 								/* LED ports */
                                 0x03C 0x07      /* P8.15 - GPIO47 - OUTPUT | MODE7 */
                                 0x038 0x07      /* P8.16 - GPIO46 - OUTPUT | MODE7 */
+                >;
+            };
+            uart4_pins: uart4_pins {
+				pinctrl-single,pins = <
+								0x70 0x26
+								0x74 0x6
                 >;
             };
         };
@@ -234,5 +242,16 @@
 				ti,chan-step-sampledelay = <0x0 0x0 0x0 0x0 0x0 0x0 0x0>;
 			};
 		};
-};
+	};
+
+	/* UART */
+	fragment@8 {
+        target = <&uart4>;
+        __overlay__ {
+             status = "okay";
+             pinctrl-names = "default";
+             pinctrl-0 = <&uart4_pins>;
+        };
+    };
+
 };
