@@ -114,15 +114,15 @@ void initRobot()
 	//~ }
 	//~ isInitSuccessful &= initServo;
 
-	//~ gboolean initMouse = ANDS9800_init(&robotMouseSensor, SPI_0);
-	//~ if(!initMouse)
-	//~ {
-		//~ printf("Could not detect mouse sensor\n");
-		//~ lcd_setText(robotLCD, "Mouse init failed", 0);
-		//~ lcd_setBacklight(robotLCD, TRUE, FALSE, FALSE);
-		//~ g_usleep(1000000);
-	//~ }
-	//~ isInitSuccessful &= initMouse;
+	gboolean initMouse = ANDS9800_init(&robotMouseSensor, SPI_0);
+	if(!initMouse)
+	{
+		printf("Could not detect mouse sensor\n");
+		lcd_setText(robotLCD, "Mouse init failed", 0);
+		lcd_setBacklight(robotLCD, TRUE, FALSE, FALSE);
+		g_usleep(1000000);
+	}
+	isInitSuccessful &= initMouse;
 
 	//~ gboolean initColor = colorSensor_init(&robotColorSensor, &I2C_2);
 	//~ if(!initColor)
@@ -166,7 +166,6 @@ int main(int argc, char **argv)
 	GMainLoop* loop = g_main_loop_new(0, 0 	);
 	// Start heartbeat thead.
 	g_thread_new("Heartbeat", heartbeatThread, NULL);
-
 	// Init robot hardware.
 	// Should we check and stop if init fails ?
 	initRobot();

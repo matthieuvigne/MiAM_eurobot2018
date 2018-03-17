@@ -76,7 +76,7 @@ void robot_setTarget(RobotTarget target)
 {
 	g_mutex_lock(&targetMutex);
 	robotTarget.type = target.type;
-	robotTarget.parameter = target.parameter;
+	robotTarget.targetPosition = target.targetPosition;
 	g_mutex_unlock(&targetMutex);
 }
 
@@ -85,7 +85,7 @@ RobotTarget robot_getTarget()
 	RobotTarget target;
 	g_mutex_lock(&targetMutex);
 	target.type = robotTarget.type;
-	target.parameter = robotTarget.parameter;
+	target.targetPosition = robotTarget.targetPosition;
 	g_mutex_unlock(&targetMutex);
 	return target;
 }

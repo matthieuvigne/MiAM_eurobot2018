@@ -36,13 +36,11 @@
 
 	/// \brief Structure to pass a target to the motion controller
 	/// \details This structure contains two fields: type specifies the type of target,
-	///			 parameter is a double whose meaning depends on the motion:
-	///				- for a translation, it is the translation distance, in m (negative for going backward).
-	///				- for a rotation, it is the rotation angle, in rad.
-	///				- for a stop target, this parameter is meaningless.
+	///			 parameter is a robot target position - depending on  the motion type only part of this parameter
+	///          is parsed.
 	typedef struct{
 		TargetType_t type;
-		double parameter;
+		RobotPosition targetPosition;
 	}RobotTarget;
 
 

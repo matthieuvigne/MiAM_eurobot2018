@@ -9,11 +9,11 @@ gboolean isMotionControllerRunning;
 // Robot-specific constants.
 
 // Max motor speed, in half counts / s.
-const int MOTOR_MAX_SPEED = 200;
+const int MOTOR_MAX_SPEED = 800;
 
-// Motor current profile constants, for the 42BYGHW810 motor, 1.8A - these values are computed using ST dSPIN utility.
-const int MOTOR_KVAL_HOLD = 0x26;
-const int MOTOR_BEMF[4] = {0x2D, 0x172E, 0xE, 0x2E};
+// Motor current profile constants, for the 42BYGHW810 motor, 2.0A - these values are computed using ST dSPIN utility.
+const int MOTOR_KVAL_HOLD = 0x2D;
+const int MOTOR_BEMF[4] = {0x3C, 0x172E, 0xE, 0x39};
 
 
 // Constants for choosing side in arrays.
@@ -109,21 +109,15 @@ gboolean motion_initMotors()
 	gboolean result = TRUE;
 
 	L6470_initStructure(&robotMotors[RIGHT], SPI_10);
-    L6470_initMotion(robotMotors[RIGHT], MOTOR_MAX_SPEED, 0.5*MOTOR_MAX_SPEED, 0.5*MOTOR_MAX_SPEED);
+    L6470_initMotion(robotMotors[RIGHT], MOTOR_MAX_SPEED, MOTOR_MAX_SPEED, MOTOR_MAX_SPEED);
     L6470_initBEMF(robotMotors[RIGHT], MOTOR_KVAL_HOLD, MOTOR_BEMF[0], MOTOR_BEMF[1], MOTOR_BEMF[2], MOTOR_BEMF[3]);
 	if(L6470_getParam(robotMotors[RIGHT], dSPIN_KVAL_HOLD) != MOTOR_KVAL_HOLD)
 	{
 		printf("Failed to init right motor\n");
 		result =  FALSE;
 	}
-	L6470_highZ(robotMotors[RIGHT]);
-
-	printf("%d\n", L6470_getParam(robotMotors[RIGHT], dSPIN_STEP_MODE));
-	printf("%d\n", L6470_getError(robotMotors[RIGHT]));
-	printf("%d\n", L6470_getError(robotMotors[RIGHT]));
-
 	L6470_initStructure(&robotMotors[LEFT], SPI_11);
-    L6470_initMotion(robotMotors[LEFT], MOTOR_MAX_SPEED, 0.5*MOTOR_MAX_SPEED, 0.5*MOTOR_MAX_SPEED);
+    L6470_initMotion(robotMotors[LEFT], MOTOR_MAX_SPEED, MOTOR_MAX_SPEED, MOTOR_MAX_SPEED);
     L6470_initBEMF(robotMotors[LEFT], MOTOR_KVAL_HOLD, MOTOR_BEMF[0], MOTOR_BEMF[1], MOTOR_BEMF[2], MOTOR_BEMF[3]);
 	if(L6470_getParam(robotMotors[LEFT], dSPIN_KVAL_HOLD) != MOTOR_KVAL_HOLD)
 	{
@@ -131,7 +125,7 @@ gboolean motion_initMotors()
 		result =  FALSE;
 	}
 
-	//~ stopMotors();
+	stopMotors();
 	return result;
 }
 
@@ -490,7 +484,7 @@ void *motion_startController()
 		imu_gyroGetValues(robotIMU, &gyroX, &gyroY, &gyroZ);
 		imu_accelGetValues(robotIMU, &accelX, &accelY, &accelZ);
 		double mouseX, mouseY;
-		//~ ADNS9800_getMotion(robotMouseSensor, &mouseX, &mouseY);
+		ADNS9800_getMotion(robotMouseSensor, &mouseX, &mouseY);
 		gchar *line = g_strdup_printf("%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f\n",
 		                             g_timer_elapsed(motionTimer, NULL),
 		                             speedR, speedL,
