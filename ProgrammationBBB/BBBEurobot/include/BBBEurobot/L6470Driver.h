@@ -72,6 +72,13 @@
 	int32_t L6470_getPosition(L6470 l);
 
 
+	/// \brief Get current motor position.
+    ///
+    /// \param[in] l A valid L6470 structure.
+    /// \returns The current motor speed, in steps/s.
+	double L6470_getSpeed(L6470 l);
+
+
 	/// \brief Set current motor speed.
     ///
     /// \param[in] l A valid L6470 structure.
