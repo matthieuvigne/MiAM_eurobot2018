@@ -25,29 +25,28 @@ void *strategy_runMatch()
 	// Trajecotry for mocap
 
 	// Straight line
-	goToPos(400, 0);
-	while(TRUE) ;;
-	//~ g_usleep(500000);
-	//~ goToPos(-1200, -1200);
-	//~ g_usleep(500000);
+	goToPos(1200, 1200);
+	g_usleep(500000);
+	goToPos(-1200, -1200);
+	g_usleep(500000);
 
-	//~ // Rotation
-	//~ goToPos(800,-800);
-	//~ g_usleep(500000);
-	//~ goToPos(-800,800);
-	//~ g_usleep(500000);
+	// Rotation
+	goToPos(800,-800);
+	g_usleep(500000);
+	goToPos(-800,800);
+	g_usleep(500000);
 
 	//~ // Draw square
-	//~ int squareSize = 1500;
-	//~ int rotationAngle = 400;
+	int squareSize = 1500;
+	int rotationAngle = 400;
 
-	//~ for(int i = 0; i < 4; i++)
-	//~ {
-		//~ goToPos(squareSize, squareSize);
-		//~ g_usleep(500000);
-		//~ goToPos(rotationAngle, -rotationAngle);
-		//~ g_usleep(500000);
-	//~ }
+	for(int i = 0; i < 4; i++)
+	{
+		goToPos(squareSize, squareSize);
+		g_usleep(500000);
+		goToPos(rotationAngle, -rotationAngle);
+		g_usleep(500000);
+	}
 	//~ // Draw square, turning the other direction
 
 	//~ for(int i = 0; i < 4; i++)
