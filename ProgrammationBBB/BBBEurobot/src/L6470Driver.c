@@ -163,7 +163,7 @@ void L6470_setSpeed(L6470 l, int speed)
 	}
 
     uint32_t regVal = (speed * 67.108864) + 0.5;
-    if (regVal > 0xFFFFF) regVal = 0xFFFFF;
+    if(regVal > 0xFFFFF) regVal = 0xFFFFF;
 
     sendCommand(l, dSPIN_RUN | dir, regVal, paramLength(dSPIN_SPEED));
 }
@@ -211,31 +211,55 @@ uint32_t L6470_getStatus(L6470 l)
 
 uint32_t L6470_getError(L6470 l)
 {
-    uint32_t result = 0;
+    uint32_t error = 0;
     uint32_t status = L6470_getStatus(l);
-    uint32_t temp = 0;
+    GString *errorMessage = g_string_new(NULL);
 
-    temp = status & dSPIN_STATUS_NOTPERF_CMD;
-    if (temp) result |= dSPIN_ERR_NOEXEC;
+    if((status & dSPIN_STATUS_NOTPERF_CMD) == 0)
+    {
+		error |= dSPIN_ERR_NOEXEC;
+		g_string_append(errorMessage, "Cmd no exec ");
+	}
+    if((status & dSPIN_STATUS_WRONG_CMD) == 0)
+    {
+		error |= dSPIN_ERR_BADCMD;
+		g_string_append(errorMessage, "Bad cmd ");
+	}
 
-    temp = status & dSPIN_STATUS_WRONG_CMD;
-    if (temp) result |= dSPIN_ERR_BADCMD;
+    if((status & dSPIN_STATUS_UVLO) == 0)
+    {
+		error |= dSPIN_ERR_UVLO;
+		g_string_append(errorMessage, "Undervoltage ");
+	}
 
-    temp = status & dSPIN_STATUS_UVLO;
-    if (temp == 0) result |= dSPIN_ERR_UVLO;
-    temp = status & dSPIN_STATUS_TH_SD;
-    if (temp == 0) result |= dSPIN_ERR_THSHTD;
+    if((status & dSPIN_STATUS_TH_SD) == 0)
+	{
+		error |= dSPIN_ERR_THSHTD;
+		g_string_append(errorMessage, "Thermal shutdown ");
+	}
 
-    temp = status & dSPIN_STATUS_OCD;
-    if (temp == 0) result |= dSPIN_ERR_OVERC;
+    if((status & dSPIN_STATUS_OCD) == 0)
+    {
+		error |= dSPIN_ERR_OVERC;
+		g_string_append(errorMessage, "Overcurrent ");
+	}
 
-    temp = status & dSPIN_STATUS_STEP_LOSS_A;
-    if (temp == 0) result |= dSPIN_ERR_STALLA;
+    if((status & dSPIN_STATUS_STEP_LOSS_A) == 0)
+	{
+		error |= dSPIN_ERR_STALLA;
+		g_string_append(errorMessage, "Stall A ");
+	}
 
-    temp = status & dSPIN_STATUS_STEP_LOSS_B;
-    if (temp == 0) result |= dSPIN_ERR_STALLB;
+    if((status & dSPIN_STATUS_STEP_LOSS_B) == 0)
+    {
+		error |= dSPIN_ERR_STALLB;
+		g_string_append(errorMessage, "Stall B ");
+	}
+	if(error > 0)
+		printf("L6470 error: %s\n", errorMessage->str);
 
-    return result;
+	g_string_free(errorMessage, TRUE);
+    return error;
 }
 
 
@@ -251,7 +275,7 @@ void L6470_goToPosition(L6470 l, int32_t pos)
     if(pos > 0)
 		dir = 1;
     uint32_t abs_steps = abs(pos);
-    if (abs_steps > 0x3FFFFF) abs_steps = 0x3FFFFF;
+    if(abs_steps > 0x3FFFFF) abs_steps = 0x3FFFFF;
 
 	sendCommand(l, dSPIN_MOVE | dir, abs_steps, paramLength(dSPIN_ABS_POS));
 }
@@ -262,11 +286,11 @@ int L6470_isBusy(L6470 l)
     uint32_t temp = L6470_getParam(l, dSPIN_STATUS);
     uint32_t busy = temp & dSPIN_STATUS_BUSY;
 
-    if (busy == 0)
+    if(busy == 0)
     {
         temp &= dSPIN_STATUS_MOT_STATUS;
         temp >>= 5;
-        //if (temp == 0) temp = 0xFF;
+        //if(temp == 0) temp = 0xFF;
         return temp;
     }
 

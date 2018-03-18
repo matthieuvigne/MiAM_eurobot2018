@@ -119,6 +119,7 @@
 
 
 	/// \brief Get the last error read from the motor controller.
+	/// \details If an error is present, it will be printed in the terminal.
     ///
     /// \param[in] l A valid L6470 structure.
 	uint32_t L6470_getError(L6470 l);
