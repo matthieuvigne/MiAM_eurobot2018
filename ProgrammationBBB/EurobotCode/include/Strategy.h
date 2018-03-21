@@ -15,4 +15,5 @@
     ///			 automatically at the end of the timer.
 	void *strategy_runMatch();
 
+	pthread_t strategyThread;			///< pthread representing the strategy thread (for cancelability)
  #endif

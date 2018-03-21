@@ -14,6 +14,7 @@
 
 #include "Robot.h"
 #include "MotionController.h"
+#include "Localisation.h"
 #include "Strategy.h"
 
 
@@ -60,9 +61,10 @@ GTimer *timerMain;
 // Function that stops the robot.
 gboolean stop_robot()
 {
-	printf("%f\n", g_timer_elapsed(timerMain, NULL));
-	// End motion controller to stop the motors.
-	motion_stopController();
+	printf("End of match, time: %f\n", g_timer_elapsed(timerMain, NULL));
+	// Kill startegy thread to stop the motors.
+	pthread_kill(strategyThread, SIGINT);
+	g_usleep(500000);
 	exit(0);
 
 	return TRUE;
@@ -180,7 +182,7 @@ int main(int argc, char **argv)
 	//~ robot_setPosition(STARTING_POSITION);
 	// Launch the strategy thread
 	g_thread_new("Strategy", strategy_runMatch, NULL);
-	g_thread_new("MotionController", motion_startController, NULL);
+	g_thread_new("Localisation", localisation_start, NULL);
 
 	// Timeout functions to check on the infrared sensors.
 	g_timeout_add(40, checkInfrarouge, NULL);

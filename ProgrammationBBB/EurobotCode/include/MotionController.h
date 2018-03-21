@@ -1,9 +1,5 @@
 /// \file MotionController.h
-/// \brief This file implements all task related to positionning the robot on the table.
-///
-/// \details The function motion_startController() is meant to be run as a separate thread. This
-///			 thread runs a fixed-frequency loop: at each iteration, the position of the robot is estimated,
-///			 and the robot is moved towards the current target, if needed.
+/// \brief This file implements function relative to robot motion on the table.
 ///	\note	 All functions in this header should be prefixed with motion_.
 
 #ifndef MOTION_H
@@ -19,20 +15,41 @@
 	///			and should be retested.
 	gboolean motion_initMotors();
 
-	/// \brief The motion controller thread
-	///	\details This start motion controller - note that, on startup, the controller sets the target to STOP
-	///			 but does not set the robot initial position.
+	/// \brief Stop both motors, and set them to high impedence.
 	///
-	/// \note	Doing a thread inside a 'while' might be more accurate than using a timeout, but requires more CPU.
-	///			On the beaglebone, errors when using callback or while are both about 8% - however the callback
-	///			approch does not take into account time spend in the function. However, the second thread uses about
-	///			25% of the CPU, against 3% for the main thread.
-	void *motion_startController();
+	/// \details This function should be called before code terminates.
+	void motion_stopMotors();
 
-	/// \brief Stop the motion controller.
+	/// \brief Moves the robot a specified distance.
+	/// \details Note that this function does a translation of the robot, not of one motor
+	///			 (both motors move the same amount). This function blocks until either the
+	///			 move is completed, or an obstacle forces the robot to abort motion.
+	///			 This motion is done using the controler's position control.
 	///
-	/// \details This function sends a stop signal to the motion controller, and wait a full motionController iteration.
-	///			 The motion controller is stopped on the next loop check, and thus should be stopped before exiting this
-	///			 function.
-	void motion_stopController();
+	/// \param[in] distance Distance in m to move (negative to move backward).
+	/// \param[in] readSensor If false, IR sensor value will be ignored during motion. This should be true by default.
+	/// \returns TRUE if target position has been reached, FALSE if an obstacle has stopped it before.
+	gboolean motion_translate(double distance, gboolean readSensor);
+
+	/// \brief Rotate the robot of a relative angle.
+	/// \details The angle is a relative angle (in rad) to turn. This function blocks until
+	///			 the move is completed. This motion is done using speed control of the motors, and a PID controler.
+	///
+	/// \param[in] angle Angle in rad to turn.
+	/// \returns This funciton always return TRUE.
+	gboolean motion_rotate(double angle);
+
+	/// \brief Moves the robot to a desired position.
+	/// \details To move the robot, this function first performs a rotation to align
+	///			 itself, then a translation to the targeted position.
+	///			 This function blocks until either the move is completed, or an obstacle forces
+	///			 the robot to abort motion.
+	///	\note The angle value of pos is not used.
+	///
+	/// \param[in] pos Target position.
+	/// \param[in] backward If TRUE, the robot will move backward to the target.
+	/// \param[in] checkInfrared If TRUE, infrared sensors will stop the motion. Otherwise they are ignored.
+	/// \returns TRUE if target position has been reached, FALSE if an obstacle has stopped it before.
+	gboolean motion_goTo(RobotPosition pos, gboolean backward, gboolean checkInfrared);
+
 #endif

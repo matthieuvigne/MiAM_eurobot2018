@@ -1,11 +1,15 @@
 #include "Robot.h"
 
+// Define robot constants.
+const double STEP_TO_SI = 2.0 * G_PI * 0.090 / 800.0;
+const double WHEEL_SPACING = 0.340;
+
+const int RIGHT = 0;
+const int LEFT = 0;
+
 // Implementation of thread-safe robotPosition position and robotPosition target.
 RobotPosition robotPosition;
 GMutex positionMutex;
-
-RobotTarget robotTarget;
-GMutex targetMutex;
 
 double robot_getPositionX()
 {
@@ -70,22 +74,4 @@ RobotPosition robot_getPosition()
 	pos.theta = robotPosition.theta;
 	g_mutex_unlock(&positionMutex);
 	return pos;
-}
-
-void robot_setTarget(RobotTarget target)
-{
-	g_mutex_lock(&targetMutex);
-	robotTarget.type = target.type;
-	robotTarget.targetPosition = target.targetPosition;
-	g_mutex_unlock(&targetMutex);
-}
-
-RobotTarget robot_getTarget()
-{
-	RobotTarget target;
-	g_mutex_lock(&targetMutex);
-	target.type = robotTarget.type;
-	target.targetPosition = robotTarget.targetPosition;
-	g_mutex_unlock(&targetMutex);
-	return target;
 }

@@ -27,23 +27,6 @@
 		double theta;	///< Angle of the robot, in rad.
 	} RobotPosition;
 
-	///< Type of target that may be sent to the robot
-	typedef enum{
-		STOP = 0,
-		TRANSLATION = 1,
-		ROTATION = 2
-	}TargetType_t;
-
-	/// \brief Structure to pass a target to the motion controller
-	/// \details This structure contains two fields: type specifies the type of target,
-	///			 parameter is a robot target position - depending on  the motion type only part of this parameter
-	///          is parsed.
-	typedef struct{
-		TargetType_t type;
-		RobotPosition targetPosition;
-	}RobotTarget;
-
-
 	/// \note Access to the current position must be thread-safe, as several threads might access them at the same time.
 	/// 	  For this reason, the RobotPosition variable current is only available through the following, thread-safe
 	///		  functions, that are defined in Robot.c.
@@ -58,11 +41,6 @@
 	void robot_setPosition(RobotPosition pos);	///< Set full robot position.
 	RobotPosition robot_getPosition();			///< Get full robot position.
 
-	/// \note Like for the current position, access to the current target is thread-safe.
-	RobotTarget robot_getTarget();
-	void robot_setTarget(RobotTarget target);
-
-
 	///< Definition of robot hardware.
 	IMU robotIMU;
 	ADNS9800 robotMouseSensor;
@@ -70,6 +48,12 @@
 	LCD robotLCD;
 	ServoDriver robotServo;
 	L6470 robotMotors[2];
+
+	///< Robot mechanical dimensions, see Robot.c.
+	extern const double STEP_TO_SI; ///< Conversion ratio between a motor step and meter.
+	extern const double WHEEL_SPACING; ///< Distance between both wheels, in m.
+	extern const int RIGHT; ///< Int to represent right motor in array.
+	extern const int LEFT; ///< Int to represent left motor in array.
 
 	///< Shared variables - to be updated...
 	gboolean detectionFront, detectionBack;	///< Robot detection variables.
