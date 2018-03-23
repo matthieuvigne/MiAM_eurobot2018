@@ -36,7 +36,7 @@
 
 	/// \brief Set position of a servo.
     ///
-    /// \param[in,out] driver The PCA9635 structure (as a pointer as the ledState variable might be modified).
+    /// \param[in,out] driver The PCA9635 structure.
     /// \param[in] servo The number of the servo to change (from 0 to 15).
     /// \param[in] position Signal value, in microseconds (clamped between 500 and 2500). Note that the resolution
     ///                   of the driver is of 4us only.

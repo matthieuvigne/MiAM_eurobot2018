@@ -17,6 +17,7 @@
 	#include <BBBEurobot/LCDDriver.h>
 	#include <BBBEurobot/KalmanFilter.h>
 	#include <BBBEurobot/L6470Driver.h>
+	#include <BBBEurobot/MaestroServoDriver.h>
 	#include <BBBEurobot/PCA9635Driver.h>
 	#include <BBBEurobot/PCAServoDriver.h>
 	#include <BBBEurobot/TCS3472ColorSensorDriver.h>
