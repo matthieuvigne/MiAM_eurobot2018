@@ -21,23 +21,23 @@ typedef struct{
 
 
 // Compute next value of PID command, given the new error and the elapsed time.
-double PID_computeValue(PID pid, double currentError, double dt)
+double PID_computeValue(PID *pid, double currentError, double dt)
 {
 	// Compute velocity.
-	double dCurrentError = (currentError - pid.oldError) / dt;
-	pid.oldError = currentError;
+	double dCurrentError = (currentError - pid->oldError) / dt;
+	pid->oldError = currentError;
 	// Compute and saturate integral.
-	pid.integral += currentError * dt;
+	pid->integral += currentError * dt;
 	// Prevent division by 0.
-	if(ABS(pid.Ki) > 1e-6)
+	if(ABS(pid->Ki) > 1e-6)
 	{
-		if(pid.Ki * pid.integral > pid.maxIntegral)
-			pid.integral = pid.maxIntegral / pid.Ki;
-		if(pid.Ki * pid.integral < -pid.maxIntegral)
-			pid.integral = -pid.maxIntegral / pid.Ki;
+		if(pid->Ki * pid->integral > pid->maxIntegral)
+			pid->integral = pid->maxIntegral / pid->Ki;
+		if(pid->Ki * pid->integral < -pid->maxIntegral)
+			pid->integral = -pid->maxIntegral / pid->Ki;
 	}
 	// Output PID command.
-	return pid.Kp * (currentError + pid.Kd * dCurrentError + pid.Ki * pid.integral);
+	return pid->Kp * (currentError + pid->Kd * dCurrentError + pid->Ki * pid->integral);
 }
 
 // Helper function: compute rotation angle to go to a specified point.
@@ -45,32 +45,38 @@ double PID_computeValue(PID pid, double currentError, double dt)
 double computeRotationAngle(RobotPosition start, RobotPosition end)
 {
 	// Don't rotate if motion is too small.
-    if(ABS(end.x - start.x) < 0.002 && ABS(end.y - start.y) < 0.002)
-        return 0;
+	if(ABS(end.x - start.x) < 0.002 && ABS(end.y - start.y) < 0.002)
+		return 0;
+	// Switch y axis sign, because frame is indirect.
+	end.y = -end.y;
+	start.y = -start.y;
 
-    double deltax = end.x - start.x;
-    double rotationAngle = 0.0;
-    if(deltax==0)
-    {
-        if(end.y < start.y)
-            rotationAngle = 3.0 * G_PI/2.0;
-        else
-            rotationAngle =  G_PI/2.0;
-    }
-    else
-    {
-		if(deltax > 0)
-			rotationAngle =  atan( (end.y - start.y)/(end.x - start.x));
+	// Get angle between start and end, between 0 and 2 * PI
+	double deltax = end.x - start.x;
+	double startEndAngle = 0.0;
+	if(deltax==0)
+	{
+		if(end.y < start.y)
+			startEndAngle = 3.0 * G_PI/2.0;
 		else
-			rotationAngle =  G_PI + atan( (end.y - start.y)/(end.x - start.x));
+			startEndAngle =  G_PI/2.0;
+	}
+	else
+	{
+		if(deltax > 0)
+			startEndAngle =  atan( (end.y - start.y)/(end.x - start.x));
+		else
+			startEndAngle =  G_PI + atan( (end.y - start.y)/(end.x - start.x));
 	}
 
+	// Find the rotation angle amount.
+	double rotationAngle = start.theta - startEndAngle;
 	while(rotationAngle >= G_PI)
 		rotationAngle -= 2 * G_PI;
 	while(rotationAngle < -G_PI)
 		rotationAngle += 2 * G_PI;
 
-    return rotationAngle;
+	return rotationAngle;
 }
 
 // Check infrared sensor, return TRUE if there is an obstacle on the way.
@@ -172,6 +178,7 @@ gboolean motion_translate(double distance, gboolean readSensor)
 		g_usleep(20000);
 		L6470_getError(robotMotors[RIGHT]);
 		L6470_getError(robotMotors[LEFT]);
+
 		if(readSensor && checkSensor(distance < 0))
 		{
 			// An obstacle has been seen: stop the motors, wait 5 sec
@@ -212,18 +219,18 @@ gboolean motion_rotate(double angle)
 	PID rotationPID = {	error,		// oldError
 						0.0,		// integral
 						1.0,		// maxIntegral
-						110.0,		// Kp
-						0.0005,		// Kd
-						0.06};		// Ki
+						120.0,		// Kp
+						0.0002,		// Kd
+						0.05};		// Ki
 
 	GTimer *motionTimer = g_timer_new();
 	g_timer_start(motionTimer);
 
 	// Motion is completed if we are close enough to the target position and our velocity is small enough.
-	while(ABS(error) > 0.01 || ABS(dError) > 0.05)
+	while(ABS(error) > 0.015 || ABS(dError) > 0.05)
 	{
 		// Motion is not completed: compute integral value and PID control.
-		double command = PID_computeValue(rotationPID, error, dt);
+		double command = PID_computeValue(&rotationPID, error, dt);
 
 		// Send motion command to both motors.
 		L6470_setSpeed(robotMotors[RIGHT], -command);
@@ -245,6 +252,8 @@ gboolean motion_rotate(double angle)
 		dError = (error - rotationPID.oldError) / dt;
 		lastLoopTime = currentTime;
 	}
+	L6470_setSpeed(robotMotors[RIGHT], 0);
+	L6470_setSpeed(robotMotors[LEFT], 0);
 	// Wait for motors to be fully stopped.
 	while(L6470_isBusy(robotMotors[RIGHT]) != 0 || L6470_isBusy(robotMotors[LEFT]) != 0)
 		g_usleep(20000);

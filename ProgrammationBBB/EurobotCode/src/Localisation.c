@@ -80,6 +80,7 @@ void *localisation_start()
 		double gyroX, gyroY, gyroZ, accelX, accelY, accelZ;
 		imu_gyroGetValues(robotIMU, &gyroX, &gyroY, &gyroZ);
 		imu_accelGetValues(robotIMU, &accelX, &accelY, &accelZ);
+		gyroZ -= GYRO_Z_BIAS;
 		double mouseX, mouseY;
 		ADNS9800_getMotion(robotMouseSensor, &mouseX, &mouseY);
 
@@ -90,13 +91,15 @@ void *localisation_start()
 		// Estimate new position.
 		RobotPosition currentPosition = robot_getPosition();
 		// Estimate angle.
-		double newAngleEncoder = robot_getPositionTheta() + atan((motorIncrementSI[RIGHT] - motorIncrementSI[LEFT]) / WHEEL_SPACING);
+		double tanTheta = (motorIncrementSI[RIGHT] - motorIncrementSI[LEFT]) / ROBOT_WIDTH;
+		double newAngleEncoder = robot_getPositionTheta() + atan(tanTheta);
 		currentPosition.theta = kalman_updateEstimate(&kalmanFilter, newAngleEncoder, gyroZ, dt);
 
 		// Integrate angle estimation on X and Y.
 		double linearIncrement = 1 / 2.0 * (motorIncrementSI[LEFT] + motorIncrementSI[RIGHT]);
 		currentPosition.x += linearIncrement * cos(currentPosition.theta);
-		currentPosition.y += linearIncrement * cos(currentPosition.theta);
+		// Minus sign: the frame is indirect.
+		currentPosition.y -= linearIncrement * sin(currentPosition.theta);
 		robot_setPosition(currentPosition);
 
 		// Log data

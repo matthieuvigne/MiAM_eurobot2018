@@ -26,7 +26,7 @@
 	///			 move is completed, or an obstacle forces the robot to abort motion.
 	///			 This motion is done using the controler's position control.
 	///
-	/// \param[in] distance Distance in m to move (negative to move backward).
+	/// \param[in] distance Distance in mm to move (negative to move backward).
 	/// \param[in] readSensor If false, IR sensor value will be ignored during motion. This should be true by default.
 	/// \returns TRUE if target position has been reached, FALSE if an obstacle has stopped it before.
 	gboolean motion_translate(double distance, gboolean readSensor);
