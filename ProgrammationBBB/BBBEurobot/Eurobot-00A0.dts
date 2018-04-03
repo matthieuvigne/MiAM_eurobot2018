@@ -76,7 +76,7 @@
 		"spi0",
 		"spi1",
 		"tscadc",
-		"uart4";
+		"uart5";
 
 	/* Define pin usage*/
     fragment@0 {
@@ -246,7 +246,7 @@
 
 	/* UART */
 	fragment@8 {
-        target = <&uart4>;
+        target = <&uart5>;
         __overlay__ {
              status = "okay";
              pinctrl-names = "default";

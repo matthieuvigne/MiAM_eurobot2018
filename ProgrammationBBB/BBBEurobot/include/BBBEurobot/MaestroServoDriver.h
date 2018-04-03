@@ -23,7 +23,7 @@
     /// \returns   TRUE on success, FALSE otherwise.
 	gboolean maestro_init(MaestroDriver *driver, gchar *portName, int deviceID);
 
-	static inline gboolean maestro_initDefault(MaestroDriver *driver, gchar *portName, int deviceID)
+	static inline gboolean maestro_initDefault(MaestroDriver *driver, gchar *portName)
 	{
 		return maestro_init(driver, portName, 12);
 	}
