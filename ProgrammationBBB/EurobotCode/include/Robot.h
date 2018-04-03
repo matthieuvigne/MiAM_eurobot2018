@@ -18,12 +18,15 @@
 	#include <glib.h>
 
      /// \brief Structure used to represent the position of the robot
-     /// \details The origin is taken at the lower left corner, X axis aligned along the longest
-     ///		  side of the table, theta is the angle between the vector going from back to front of the robot
-     ///		  and the x unit vector, positive in the trigonometric direction.
+     /// \details The axes are defined according to the competition rules:
+     ///			- the origin is the upper right corner.
+     ///			- X is along the long table side, facing right.
+     ///			- Y is along the short table side, facing down.
+     ///			- Theta is computed as the angle from X to -Y - i.e. the classical trigonometric angle. Note that
+     ///			  this corresponds to an INDIRECT frame of reference.
      typedef struct {
-		double x;	///< X coordinate of the robot.
-		double y;	///< Y coordinate of the robot.
+		double x;	///< X coordinate of the robot, in mm.
+		double y;	///< Y coordinate of the robot, in mm.
 		double theta;	///< Angle of the robot, in rad.
 	} RobotPosition;
 
@@ -46,18 +49,66 @@
 	ADNS9800 robotMouseSensor;
 	ColorSensorTCS3472 robotColorSensor;
 	LCD robotLCD;
-	ServoDriver robotServo;
+	MaestroDriver robotServo;
 	L6470 robotMotors[2];
 
 	///< Robot mechanical dimensions, see Robot.c.
-	extern const double STEP_TO_SI; ///< Conversion ratio between a motor step and meter.
-	extern const double WHEEL_SPACING; ///< Distance between both wheels, in m.
+	extern const double STEP_TO_SI; ///< Conversion ratio between a motor step and a millimeter.
+	extern const double ROBOT_WIDTH; ///< Distance between both wheels, in mm.
+	extern const double CANON_OFFSET; ///< Distance between robot center and canon, in mm.
+	extern const double CLAW_OFFSET; ///< Distance between robot center and cube claw, in mm.
+	extern const double MOUSE_SENSOR_OFFSET; ///< Distance between robot center and mouse sensor, in mm.
+	extern const double BALL_LENGTH_OFFSET; ///< Distance between robot center and ball catching part,
+	                                        /// along the robot x axis, in mm.
+	extern const double BALL_WIDTH_OFFSET; ///< Distance between robot center and ball catching part,
+	                                       /// along the robot y axis, in mm.
+	extern const double BIN_OFFSET; ///< Distance between robot center and ball throwing bin, in mm.
+
+	extern const double GYRO_Z_BIAS;	///< Initial gyro bias, to remove from gyro signal.
 	extern const int RIGHT; ///< Int to represent right motor in array.
 	extern const int LEFT; ///< Int to represent left motor in array.
 
+	extern RobotPosition startingPosition; ///< The starting position, defined in MainLoop, but can be used elsewhere.
 	///< Shared variables - to be updated...
 	gboolean detectionFront, detectionBack;	///< Robot detection variables.
 
 	///< TRUE if we are playing on the blue side of the field.
 	gboolean blueSide;
+
+
+	///< Servo actions. Note that these functions do not wait for the servo action to be done.
+	static inline void servo_openWaterTank()
+	{
+		maestro_setPosition(robotServo, 0, 1200);
+	}
+
+	static inline void servo_closeWaterTank()
+	{
+		maestro_setPosition(robotServo, 0, 2200);
+	}
+
+	static inline void servo_ballDirectionCenter()
+	{
+		maestro_setPosition(robotServo, 1, 1500);
+	}
+
+	static inline void servo_ballDirectionBin()
+	{
+		maestro_setPosition(robotServo, 1, 1800);
+	}
+
+	static inline void servo_ballDirectionCanon()
+	{
+		maestro_setPosition(robotServo, 1, 1200);
+	}
+
+	/// Send all servos to initial position.
+	static inline void servo_initPosition()
+	{
+		// Remove all speed limits.
+		for(int i = 0; i < 16; i++)
+			maestro_setSpeed(robotServo, i, 0);
+		servo_closeWaterTank();
+		servo_ballDirectionCenter();
+	}
  #endif

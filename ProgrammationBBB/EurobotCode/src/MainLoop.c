@@ -106,15 +106,17 @@ void initRobot()
 	}
 	isInitSuccessful &= initIMU;
 
-	//~ gboolean initServo = servoDriver_initDefault(&robotServo, &I2C_1, 27300000);
-	//~ if(!initServo)
-	//~ {
-		//~ printf("Could not detect servo driver\n");
-		//~ lcd_setText(robotLCD, "Servo init failed", 0);
-		//~ lcd_setBacklight(robotLCD, TRUE, FALSE, FALSE);
-		//~ g_usleep(1000000);
-	//~ }
-	//~ isInitSuccessful &= initServo;
+	gboolean initServo = maestro_initDefault(&robotServo, "/dev/ttyO4", 12);
+	if(!initServo)
+	{
+		printf("Could not talk to servo driver\n");
+		lcd_setText(robotLCD, "Servo init failed", 0);
+		lcd_setBacklight(robotLCD, TRUE, FALSE, FALSE);
+		g_usleep(1000000);
+	}
+	//~ else
+		//~ servo_initPosition();
+	isInitSuccessful &= initServo;
 
 	gboolean initMouse = ANDS9800_init(&robotMouseSensor, SPI_0);
 	if(!initMouse)
@@ -126,15 +128,21 @@ void initRobot()
 	}
 	isInitSuccessful &= initMouse;
 
-	//~ gboolean initColor = colorSensor_init(&robotColorSensor, &I2C_2);
-	//~ if(!initColor)
-	//~ {
-		//~ printf("Could not detect color sensor\n");
-		//~ lcd_setText(robotLCD, "Color init failed", 0);
-		//~ lcd_setBacklight(robotLCD, TRUE, FALSE, FALSE);
-		//~ g_usleep(1000000);
-	//~ }
-	//~ isInitSuccessful &= initColor;
+	gboolean initColor = colorSensor_init(&robotColorSensor, &I2C_1);
+	if(!initColor)
+	{
+		printf("Could not detect color sensor\n");
+		lcd_setText(robotLCD, "Color init failed", 0);
+		lcd_setBacklight(robotLCD, TRUE, FALSE, FALSE);
+		g_usleep(1000000);
+	}
+	else
+	{
+		// Setup sensor
+		colorSensor_setGain(robotColorSensor, TCS34725_GAIN_60X);
+		colorSensor_setIntegrationTime(robotColorSensor, 10);
+	}
+	isInitSuccessful &= initColor;
 
 	// Try motor init - we are more likely to get a failure here, so print in on the first line.
 	gboolean initMotor = motion_initMotors();
@@ -178,8 +186,11 @@ int main(int argc, char **argv)
 	// Set the robot to stop after 100s (100000ms)
 	g_timeout_add(100000, stop_robot, NULL);
 
-	// Set robot to initial position
-	//~ robot_setPosition(STARTING_POSITION);
+	// Set robot to initial position: right of the zone, back against the wall.
+	startingPosition.x = 400 - ROBOT_WIDTH / 2.0;
+	startingPosition.y = -BALL_LENGTH_OFFSET;
+	startingPosition.theta = - G_PI_2;
+	robot_setPosition(startingPosition);
 	// Launch the strategy thread
 	g_thread_new("Strategy", strategy_runMatch, NULL);
 	g_thread_new("Localisation", localisation_start, NULL);
