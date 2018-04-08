@@ -79,12 +79,12 @@
 	///< Servo actions. Note that these functions do not wait for the servo action to be done.
 	static inline void servo_openWaterTank()
 	{
-		maestro_setPosition(robotServo, 0, 1200);
+		maestro_setPosition(robotServo, 0, 2300);
 	}
 
 	static inline void servo_closeWaterTank()
 	{
-		maestro_setPosition(robotServo, 0, 2200);
+		maestro_setPosition(robotServo, 0, 1300);
 	}
 
 	static inline void servo_ballDirectionCenter()
@@ -102,13 +102,64 @@
 		maestro_setPosition(robotServo, 1, 1200);
 	}
 
+	static inline void servo_trayDown()
+	{
+		maestro_setPosition(robotServo, 2, 1880);
+	}
+
+	static inline void servo_trayUp()
+	{
+		maestro_setPosition(robotServo, 2, 950);
+		g_usleep(400000);
+		maestro_setPosition(robotServo, 2, 1100);
+	}
+
+	// Unlike the other, this function is blocking.
+	static inline void servo_openClaws()
+	{
+		maestro_setPosition(robotServo, 3, 2000);
+		while(gpio_digitalRead(CAPE_DIGITAL[2]) == 1)
+			g_usleep(10000);
+		maestro_setPosition(robotServo, 3, 1500);
+
+	}
+
+	static inline void servo_closeClaws()
+	{
+		maestro_setPosition(robotServo, 3, 1000);
+		while(gpio_digitalRead(CAPE_DIGITAL[1]) == 1)
+			g_usleep(10000);
+		maestro_setPosition(robotServo, 3, 1500);
+	}
+
+	static inline void servo_millTurn()
+	{
+		maestro_setPosition(robotServo, 9, 1460);
+		g_usleep(250000);
+	}
+
+	static inline void servo_millStop()
+	{
+		maestro_setPosition(robotServo, 9, 1500);
+	}
+
 	/// Send all servos to initial position.
 	static inline void servo_initPosition()
 	{
+		// Turn off servo.
+		for(int i = 0; i < 16; i++)
+		{
+			maestro_setPosition(robotServo, i, 0);
+			g_usleep(50000);
+		}
 		// Remove all speed limits.
 		for(int i = 0; i < 16; i++)
+		{
 			maestro_setSpeed(robotServo, i, 0);
+			g_usleep(50000);
+		}
 		servo_closeWaterTank();
 		servo_ballDirectionCenter();
+		servo_trayDown();
 	}
  #endif

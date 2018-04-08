@@ -9,7 +9,10 @@ void killStrategy()
 	motion_stopMotors();
 	// Turn off all servos.
 	for(int i = 0; i < 16; i++)
+	{
 		maestro_setPosition(robotServo, i, 0);
+		g_usleep(50);
+	}
 	exit(0);
 }
 
@@ -22,9 +25,14 @@ void gatherWater()
 	servo_openWaterTank();
 	int noDetect = 0;
 	int lastBall = 0;
+
+	// delay the return to mid position
+	int delayedCount = 0;
+
 	GTimer *gatherTime = g_timer_new();
 	g_timer_start(gatherTime);
-	while(g_timer_elapsed(gatherTime, NULL) < 5.0)
+	//~ while(g_timer_elapsed(gatherTime, NULL) < 5.0)
+	while(g_timer_elapsed(gatherTime, NULL) < 500.0)
 	{
 		ColorOutput color = colorSensor_getData(robotColorSensor);
 		int ballSide = 0;
@@ -58,8 +66,8 @@ void gatherWater()
 			g_usleep(200000);
 		lastBall = ballSide;
 
-		if(noDetect > 5)
-			break;
+		//~ if(noDetect > 5)
+			//~ break;
 		g_usleep(100000);
 	}
 }
@@ -77,14 +85,27 @@ void *strategy_runMatch()
 	servo_initPosition();
 	g_usleep(1000000);
 
-	gatherWater();
+	while(TRUE)
+	{
+		servo_millTurn();
+	}
+	//~ g_usleep(100000000);
+	//~ servo_millStop();
+
+	while(TRUE) ;;
+
+	servo_trayDown();
+	g_usleep(1000000);
+	servo_trayUp();
+
+	//~ gatherWater();
 
 	while(TRUE) ;;
 	// Go the ball catcher under the first tube.
-	targetPosition.y = 840 + BALL_WIDTH_OFFSET;
-	motion_goTo(targetPosition, FALSE, TRUE);
-	targetPosition.x = BALL_LENGTH_OFFSET;
-	motion_goTo(targetPosition, TRUE, TRUE);
+	//~ targetPosition.y = 840 + BALL_WIDTH_OFFSET;
+	//~ motion_goTo(targetPosition, FALSE, TRUE);
+	//~ targetPosition.x = BALL_LENGTH_OFFSET;
+	//~ motion_goTo(targetPosition, TRUE, TRUE);
 
 	while(TRUE) ;;
 	// Graps the first balls.
