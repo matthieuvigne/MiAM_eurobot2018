@@ -165,6 +165,22 @@ void lcd_setText(LCD lcd, gchar *text, int line)
 		lcd_sendChar(lcd, ' ');
 }
 
+void lcd_setChar(LCD lcd, gchar text, int line, int column)
+{
+	int offset = 0;
+	// If line is not zero, set offset to write to line 1.
+	if(line != 0)
+		offset  = 0x40;
+	if(column < 0)
+		column = 0;
+	if(column > 15)
+		column = 15;
+	offset += column;
+	// Go to beginning of line.
+	lcd_sendCommand(lcd, LCD_SETDDRAMADDR | offset);
+	lcd_sendChar(lcd, text);
+}
+
 
 void lcd_setTextCentered(LCD lcd, gchar *text, int line)
 {

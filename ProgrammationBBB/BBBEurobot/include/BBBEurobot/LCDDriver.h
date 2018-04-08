@@ -50,6 +50,14 @@
 	/// \param[in] line Line number (0 or 1).
 	void lcd_setText(LCD lcd, gchar *text, int line);
 
+	/// \brief Set a single character of the LCD screen.
+	///
+	/// \param[in] lcd A valid lcd structure.
+	/// \param[in] text char to display
+	/// \param[in] line Line number (0 or 1).
+	/// \param[in] column Cursor position in line (0 to 15).
+	void lcd_setChar(LCD lcd, gchar text, int line, int column);
+
 	/// \brief Set the text of a given LCD line, centering it.
 	/// \note  Writing a full line to the LCD currently takes about 70ms.
 	///
