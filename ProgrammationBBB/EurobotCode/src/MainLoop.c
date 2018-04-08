@@ -83,7 +83,7 @@ void *heartbeatThread()
 	}
 }
 
-void initRobot()
+gboolean initRobot()
 {
 	gboolean isInitSuccessful = TRUE;
 	gboolean initLCD = lcd_initDefault(&robotLCD, &I2C_2);
@@ -106,7 +106,7 @@ void initRobot()
 	}
 	isInitSuccessful &= initIMU;
 
-	gboolean initServo = maestro_initDefault(&robotServo, "/dev/ttyO4", 12);
+	gboolean initServo = maestro_initDefault(&robotServo, "/dev/ttyO4");
 	if(!initServo)
 	{
 		printf("Could not talk to servo driver\n");
@@ -149,7 +149,7 @@ void initRobot()
 	if(!initMotor)
 	{
 		printf("Could not init motors: are they turned on ?\n");
-		lcd_setText(robotLCD, "Motor init failed", 1);
+		lcd_setText(robotLCD, "Motor init failed", 0);
 		lcd_setBacklight(robotLCD, TRUE, TRUE, FALSE);
 	}
 	isInitSuccessful &= initMotor;
@@ -161,11 +161,72 @@ void initRobot()
 		lcd_setBacklight(robotLCD, FALSE, TRUE, FALSE);
 	}
 	g_usleep(1000000);
+	return isInitSuccessful;
 }
 
-void waitForStart()
+// Wait for match start, returns robot side (TRUE = RIGHT, FALSE = LEFT)
+gboolean waitForStart(gboolean isInitDone)
 {
-	// TODO
+	// Wait for staring jack to be plugged in.
+	if(gpio_digitalRead(CAPE_DIGITAL[0]) == 1)
+	{
+		printf("Waiting for jack to be plugged in\n");
+		lcd_setText(robotLCD, "Waiting for jack", 1);
+		while(gpio_digitalRead(CAPE_DIGITAL[0]) == 1)
+			g_usleep(50000);
+		printf("Jack plugged in, waiting for match start\n");
+	}
+	if(isInitDone)
+		lcd_setText(robotLCD, "Ready to start", 0);
+
+	gboolean isRightSide = FALSE;
+	gboolean oldSide = FALSE;
+	lcd_setText(robotLCD, "     GREEN     >", 1);
+	lcd_setBacklight(robotLCD, FALSE, TRUE, FALSE);
+
+	while(gpio_digitalRead(CAPE_DIGITAL[0]) == 0)
+	{
+		if(!isInitDone)
+		{
+			// Retry motor init.
+			isInitDone = motion_initMotors();
+			if(isInitDone)
+			{
+				servo_initPosition();
+				printf("Motor init successful\n");
+				lcd_setText(robotLCD, "Motor init done", 0);
+				g_usleep(1000000);
+				lcd_setText(robotLCD, "Ready to start", 0);
+			}
+		}
+		if(lcd_isButtonPressed(robotLCD, LCD_BUTTON_RIGHT))
+		{
+			oldSide = isRightSide;
+			isRightSide = TRUE;
+		}
+
+		if(lcd_isButtonPressed(robotLCD, LCD_BUTTON_LEFT))
+		{
+			oldSide = isRightSide;
+			isRightSide = FALSE;
+		}
+
+		if(oldSide != isRightSide)
+		{
+			if(isRightSide)
+			{
+				lcd_setText(robotLCD, "<    ORANGE     ", 1);
+				lcd_setBacklight(robotLCD, TRUE, TRUE, FALSE);
+			}
+			else
+			{
+				lcd_setText(robotLCD, "     GREEN     >", 1);
+				lcd_setBacklight(robotLCD, FALSE, TRUE, FALSE);
+			}
+		}
+		g_usleep(50000);
+	}
+	return isRightSide;
 }
 
 int main(int argc, char **argv)
@@ -177,13 +238,13 @@ int main(int argc, char **argv)
 	// Start heartbeat thead.
 	g_thread_new("Heartbeat", heartbeatThread, NULL);
 	// Init robot hardware.
-	// Should we check and stop if init fails ?
-	initRobot();
-	// Wait for match to start.
-	waitForStart();
+	gboolean initDone = initRobot();
+	// Wait for match to start, redoing motor init if previously failed.
+	robot_isOnRightSide = waitForStart(initDone);
+
+	// Start match, set timer to 100s.
 	timerMain = g_timer_new();
 	g_timer_start(timerMain);
-	// Set the robot to stop after 100s (100000ms)
 	g_timeout_add(100000, stop_robot, NULL);
 
 	// Set robot to initial position: right of the zone, back against the wall.
@@ -191,6 +252,7 @@ int main(int argc, char **argv)
 	startingPosition.y = -BALL_LENGTH_OFFSET;
 	startingPosition.theta = - G_PI_2;
 	robot_setPosition(startingPosition);
+
 	// Launch the strategy thread
 	g_thread_new("Strategy", strategy_runMatch, NULL);
 	g_thread_new("Localisation", localisation_start, NULL);

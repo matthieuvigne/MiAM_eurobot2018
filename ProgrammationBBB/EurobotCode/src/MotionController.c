@@ -232,6 +232,9 @@ gboolean motion_rotate(double angle)
 		// Motion is not completed: compute integral value and PID control.
 		double command = PID_computeValue(&rotationPID, error, dt);
 
+		// If playing on right side, invert command.
+		if(robot_isOnRightSide)
+			command = -command;
 		// Send motion command to both motors.
 		L6470_setSpeed(robotMotors[RIGHT], -command);
 		L6470_setSpeed(robotMotors[LEFT], command);

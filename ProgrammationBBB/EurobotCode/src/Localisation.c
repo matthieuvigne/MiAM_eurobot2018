@@ -92,6 +92,12 @@ void *localisation_start()
 		RobotPosition currentPosition = robot_getPosition();
 		// Estimate angle.
 		double tanTheta = (motorIncrementSI[RIGHT] - motorIncrementSI[LEFT]) / ROBOT_WIDTH;
+		// If playing on right side, invert rotation axis to symmetrize robot motion.
+		if(robot_isOnRightSide)
+		{
+			tanTheta = -tanTheta;
+			gyroZ = -gyroZ;
+		}
 		double newAngleEncoder = robot_getPositionTheta() + atan(tanTheta);
 		currentPosition.theta = kalman_updateEstimate(&kalmanFilter, newAngleEncoder, gyroZ, dt);
 

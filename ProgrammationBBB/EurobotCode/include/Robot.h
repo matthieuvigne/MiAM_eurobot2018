@@ -72,8 +72,8 @@
 	///< Shared variables - to be updated...
 	gboolean detectionFront, detectionBack;	///< Robot detection variables.
 
-	///< TRUE if we are playing on the blue side of the field.
-	gboolean blueSide;
+	///< TRUE if we are playing on the right side of the field, false otherwise.
+	gboolean robot_isOnRightSide;
 
 
 	///< Servo actions. Note that these functions do not wait for the servo action to be done.
