@@ -18,40 +18,52 @@
 #include "Strategy.h"
 
 
+// Sensor value threshold to consider a valid detection.
+int IR_FRONT_THRESHOLD = 800;
+int IR_BACK_THRESHOLD = 800;
+
 // Variables to store weather or not the last timerMain we checked, we saw the opponent's robot.
-gboolean oldSensorBack = FALSE;
-gboolean oldSensorFront = FALSE;
+// This is used to filter lone sensor pulse due to noise.
+gboolean oldSensorValueBack = FALSE;
+gboolean oldSensorValueFront = FALSE;
 
 /// \brief Check the infrared sensors for an obstacle
 /// \details This function is called by the main loop in a timeout.
 /// \return TRUE, to continue the timeout.
 gboolean checkInfrarouge()
 {
-	//~ // Only one sensor at the back of the robot:
-	//~ gboolean sensorBack = gpio_analogRead(CAPE_ANALOG[IR_BACK]) > IR_BACK_DETECTION;
+	gboolean sensorValue = (gpio_analogRead(CAPE_ANALOG[0]) > IR_BACK_THRESHOLD) ||
+	                      (gpio_analogRead(CAPE_ANALOG[1]) > IR_BACK_THRESHOLD);
+	robot_IRDetectionBack = sensorValue && oldSensorValueBack;
+	oldSensorValueBack = sensorValue;
 
-	//~ // We consider we have seen an obstacle if it has been detected twice in a row.
-	//~ // A lone detection is thus considered as noise and ignored.
-	//~ detectionBack = sensorBack && oldSensorBack;
-	//~ oldSensorBack = sensorBack;
+	sensorValue = (gpio_analogRead(CAPE_ANALOG[2]) > IR_BACK_THRESHOLD) ||
+	              (gpio_analogRead(CAPE_ANALOG[3]) > IR_BACK_THRESHOLD);
+	robot_IRDetectionFront = sensorValue && oldSensorValueFront;
+	oldSensorValueFront = sensorValue;
 
-	//~ // Same thing at the front, execpt this timerMain we might have two sensors.
-	//~ gboolean sensorFront = readADC(CAPE_ANALOG[IR_FRONT[0]]) > IR_FRONT_DETECTION;
-	//~ if(IR_FRONT[1] >= 0)
-		//~ sensorFront = sensorFront || readADC(CAPE_ANALOG[IR_FRONT[1]]) > IR_FRONT_DETECTION;
-	//~ detectionFront = sensorFront && oldSensorFront;
-	//~ oldSensorFront = sensorFront;
+	// Turn on red led if we see something on any sensor.
+	if(robot_IRDetectionBack || robot_IRDetectionFront)
+		gpio_digitalWrite(CAPE_LED[1], 1);
+	else
+		gpio_digitalWrite(CAPE_LED[1], 0);
 
-	//~ if(detectionFront)
-		//~ ledDriver_setLedBrightness(&leddriver, ROOF_OBSTACLE_FRONT, 127);
-	//~ else
-		//~ ledDriver_setLedBrightness(&leddriver, ROOF_OBSTACLE_FRONT, 0);
+	// Update LCD, if needed, to say which sensors sees something.
+	if(oldSensorValueFront != robot_IRDetectionFront)
+	{
+		if(robot_IRDetectionFront)
+			lcd_setChar(robotLCD, 'Y', 1, 5);
+		else
+			lcd_setChar(robotLCD, ' ', 1, 5);
+	}
 
-	//~ if(detectionBack)
-		//~ ledDriver_setLedBrightness(&leddriver, ROOF_OBSTACLE_BACK, 127);
-	//~ else
-		//~ ledDriver_setLedBrightness(&leddriver, ROOF_OBSTACLE_BACK, 0);
-
+	if(oldSensorValueBack != robot_IRDetectionBack)
+	{
+		if(robot_IRDetectionBack)
+			lcd_setChar(robotLCD, 'Y', 1, 9);
+		else
+			lcd_setChar(robotLCD, ' ', 1, 9);
+	}
 	return TRUE;
 }
 
@@ -257,6 +269,9 @@ int main(int argc, char **argv)
 	g_thread_new("Strategy", strategy_runMatch, NULL);
 	g_thread_new("Localisation", localisation_start, NULL);
 
+	// Turn screen backlight to white, display on second line IR sensor status.
+	lcd_setBacklight(robotLCD, TRUE, TRUE, TRUE);
+	lcd_setText(robotLCD, "IR F:  B: ", 1);
 	// Timeout functions to check on the infrared sensors.
 	g_timeout_add(40, checkInfrarouge, NULL);
 	// Run glib main loop.

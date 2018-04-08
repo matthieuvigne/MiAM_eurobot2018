@@ -79,40 +79,29 @@ double computeRotationAngle(RobotPosition start, RobotPosition end)
 	return rotationAngle;
 }
 
+// Distance from the side of field at which we stop listening to IR sensors while moving.
+double BORDER_DEADZONE = 500;
+
 // Check infrared sensor, return TRUE if there is an obstacle on the way.
 gboolean checkSensor(gboolean backward)
 {
-	//~ double theta =  modulo2PI(current_getTheta() + M_PI * (backward ? 1 : 0));
+	// Create a fictitious point BORDER_DISTANCE in front of the robot. If this point is outside of
+	// the field, we ignore IR sensors to prevent detecting a referee as an obstacle.
+	RobotPosition robotViewpoint = robot_getPosition();
+	// Going backward: add PI to angle to get the back of the robot.
+	if(backward)
+		robotViewpoint.theta += G_PI;
 
-	//~ // If we are less that borderDistance from the outside of the field, and
-	//~ // looking outside, we disable the sensors to prevent detecting
-	//~ // a referee as an obstacle.
-	//~ int borderDistance = 500;
-	//~ if(theta > M_PI / 2 && theta < 3 * M_PI / 2)
-	//~ {
-		//~ if( current_getX() < borderDistance)
-			//~ return FALSE;
-	//~ }
-	//~ else
-	//~ {
-		//~ if(current_getX() > 3000 - borderDistance)
-			//~ return FALSE;
-	//~ }
+	robotViewpoint.x += BORDER_DEADZONE * cos(robotViewpoint.theta);
+	// Minus sign: the frame is indirect.
+	robotViewpoint.y -= BORDER_DEADZONE * sin(robotViewpoint.theta);
 
-	//~ if(theta < M_PI)
-	//~ {
-		//~ if( current_getY() >2000 - borderDistance)
-			//~ return FALSE;
-	//~ }
-	//~ else
-	//~ {
-		//~ if(current_getY() < borderDistance)
-			//~ return FALSE;
-	//~ }
-	//~ if(backward)
-		//~ return detectionBack;
-	//~ return detectionFront;
-	return FALSE;
+	if(robotViewpoint.x < 0 || robotViewpoint.x > 3000 || robotViewpoint.y < 0 || robotViewpoint.y > 2000)
+		return TRUE;
+
+	if(backward)
+		return robot_IRDetectionBack;
+	return robot_IRDetectionFront;
 }
 
 

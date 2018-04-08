@@ -69,8 +69,9 @@
 	extern const int LEFT; ///< Int to represent left motor in array.
 
 	extern RobotPosition startingPosition; ///< The starting position, defined in MainLoop, but can be used elsewhere.
-	///< Shared variables - to be updated...
-	gboolean detectionFront, detectionBack;	///< Robot detection variables.
+
+	///< Boolean to give sensor status about front / back sensor detection.
+	gboolean robot_IRDetectionFront, robot_IRDetectionBack;
 
 	///< TRUE if we are playing on the right side of the field, false otherwise.
 	gboolean robot_isOnRightSide;
