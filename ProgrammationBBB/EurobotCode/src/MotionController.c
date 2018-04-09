@@ -1,8 +1,9 @@
 #include "Robot.h"
 #include "MotionController.h"
 
-// Max robotMotors speed, in half counts / s.
+// Max robotMotors speed and acceleration, in half counts / s.
 const int MOTOR_MAX_SPEED = 800;
+const int MOTOR_MAX_ACCELERATION = 800;
 
 // Motor current profile constants, for the 42BYGHW810 robotMotors, 2.0A - these values are computed using ST dSPIN utility.
 const int MOTOR_KVAL_HOLD = 0x2D;
@@ -11,7 +12,6 @@ const int MOTOR_BEMF[4] = {0x3C, 0x172E, 0xE, 0x39};
 
 // Generic implementation of a PID controller.
 typedef struct{
-	double oldError;	///< Old value of the error, used to compute its derivative.
 	double integral; 	///< Integral value.
 	double maxIntegral;	///< Maximum value of the integral feedback, i.e Ki * integral (to prevent windup).
 	double Kp;			///< Proportional gain.
@@ -21,13 +21,10 @@ typedef struct{
 
 
 // Compute next value of PID command, given the new error and the elapsed time.
-double PID_computeValue(PID *pid, double currentError, double dt)
+double PID_computeValue(PID *pid, double positionError, double velocityError, double dt)
 {
-	// Compute velocity.
-	double dCurrentError = (currentError - pid->oldError) / dt;
-	pid->oldError = currentError;
 	// Compute and saturate integral.
-	pid->integral += currentError * dt;
+	pid->integral += positionError * dt;
 	// Prevent division by 0.
 	if(ABS(pid->Ki) > 1e-6)
 	{
@@ -37,7 +34,81 @@ double PID_computeValue(PID *pid, double currentError, double dt)
 			pid->integral = -pid->maxIntegral / pid->Ki;
 	}
 	// Output PID command.
-	return pid->Kp * (currentError + pid->Kd * dCurrentError + pid->Ki * pid->integral);
+	return pid->Kp * (positionError + pid->Kd * velocityError + pid->Ki * pid->integral);
+}
+
+
+
+// Trajectory for rotation motion: a velocity trapezoid.
+// This function computes trajectory position and velocity at time t.
+void rotationTrajectory(double targetAngle, double time, double *position, double *velocity)
+{
+	// Rotation trajectory velocity parameters.
+	double ROTATION_MAX_VELOCITY = 0.8 * MOTOR_MAX_SPEED * STEP_TO_SI / ROBOT_WIDTH * 2.0;
+	double ROTATION_MAX_ACCELERATION = 0.8 * MOTOR_MAX_ACCELERATION * STEP_TO_SI / ROBOT_WIDTH * 2.0;
+
+	int sign = 1;
+	if(targetAngle < 0)
+	{
+		sign = -1;
+		targetAngle = -targetAngle;
+	}
+
+	double rotationDistanceToFullSpeed = ROTATION_MAX_VELOCITY * ROTATION_MAX_VELOCITY / ROTATION_MAX_ACCELERATION / 2.0;
+	if(targetAngle < rotationDistanceToFullSpeed)
+	{
+		// Motion is too short to reach a constant velocity profile: just do an acceleration and deceleration phase.
+		double switchTime = sqrt(targetAngle / ROTATION_MAX_ACCELERATION);
+		if(time < switchTime)
+		{
+			*velocity = ROTATION_MAX_ACCELERATION * time;
+			*position = ROTATION_MAX_ACCELERATION * time * time / 2.0;
+		}
+		else
+		{
+
+			*velocity = ROTATION_MAX_ACCELERATION * (2 * switchTime - time);
+			*position = targetAngle / 2.0 +
+			            ROTATION_MAX_ACCELERATION * switchTime * (time - switchTime) -
+			            ROTATION_MAX_ACCELERATION * (time - switchTime) * (time - switchTime) / 2.0;
+		}
+	}
+	else
+	{
+		// We have time for full acceleration.
+		double accelerationTime = ROTATION_MAX_VELOCITY / ROTATION_MAX_ACCELERATION;
+		double constantVelocityTime = accelerationTime +
+		                             (targetAngle - 2 * rotationDistanceToFullSpeed) / ROTATION_MAX_VELOCITY;
+		if(time < accelerationTime)
+		{
+			// Acceleration
+			*velocity = ROTATION_MAX_ACCELERATION * time;
+			*position = ROTATION_MAX_ACCELERATION * time * time / 2.0;
+		}
+		else if(time < constantVelocityTime)
+		{
+			// Constant velocity.
+			*velocity = ROTATION_MAX_VELOCITY;
+			*position = rotationDistanceToFullSpeed +
+			            ROTATION_MAX_VELOCITY * (time - accelerationTime);
+		}
+		else
+		{
+			*velocity = ROTATION_MAX_VELOCITY - ROTATION_MAX_ACCELERATION * (time - constantVelocityTime);
+			*position = targetAngle - rotationDistanceToFullSpeed +
+			            ROTATION_MAX_VELOCITY * (time - constantVelocityTime) -
+			            ROTATION_MAX_ACCELERATION * (time - constantVelocityTime) * (time - constantVelocityTime) / 2.0;
+		}
+	}
+	// Clamp trajectory at end.
+	if(*position > targetAngle || *velocity < 0.0)
+	{
+		*position = targetAngle;
+		*velocity = 0;
+	}
+	// Restore sign.
+	*position = sign * (*position);
+	*velocity = sign * (*velocity);
 }
 
 // Helper function: compute rotation angle to go to a specified point.
@@ -110,7 +181,7 @@ gboolean motion_initMotors()
 	gboolean result = TRUE;
 
 	L6470_initStructure(&robotMotors[RIGHT], SPI_10);
-    L6470_initMotion(robotMotors[RIGHT], MOTOR_MAX_SPEED, MOTOR_MAX_SPEED, MOTOR_MAX_SPEED);
+    L6470_initMotion(robotMotors[RIGHT], MOTOR_MAX_SPEED, MOTOR_MAX_ACCELERATION, MOTOR_MAX_ACCELERATION);
     L6470_initBEMF(robotMotors[RIGHT], MOTOR_KVAL_HOLD, MOTOR_BEMF[0], MOTOR_BEMF[1], MOTOR_BEMF[2], MOTOR_BEMF[3]);
 	if(L6470_getParam(robotMotors[RIGHT], dSPIN_KVAL_HOLD) != MOTOR_KVAL_HOLD)
 	{
@@ -118,7 +189,7 @@ gboolean motion_initMotors()
 		result =  FALSE;
 	}
 	L6470_initStructure(&robotMotors[LEFT], SPI_11);
-    L6470_initMotion(robotMotors[LEFT], MOTOR_MAX_SPEED, MOTOR_MAX_SPEED, MOTOR_MAX_SPEED);
+    L6470_initMotion(robotMotors[LEFT], MOTOR_MAX_SPEED, MOTOR_MAX_ACCELERATION, MOTOR_MAX_ACCELERATION);
     L6470_initBEMF(robotMotors[LEFT], MOTOR_KVAL_HOLD, MOTOR_BEMF[0], MOTOR_BEMF[1], MOTOR_BEMF[2], MOTOR_BEMF[3]);
 	if(L6470_getParam(robotMotors[LEFT], dSPIN_KVAL_HOLD) != MOTOR_KVAL_HOLD)
 	{
@@ -194,33 +265,45 @@ gboolean motion_translate(double distance, gboolean readSensor)
 }
 
 
-gboolean motion_rotate(double angle)
+gboolean motion_rotate(double motionAngle)
 {
 	// Set control loop period.
 	const double LOOP_PERIOD = 0.020;
-	double lastLoopTime = 0.0;
 
-	double targetAngle = robot_getPositionTheta() + angle;
-	double error = -angle;
-	double dError = 0.0;
+	double startAngle = robot_getPositionTheta();
+	double targetAngle = startAngle + motionAngle;
+
+	double currentTime = 0.0;
 	double dt = LOOP_PERIOD;
 
-	PID rotationPID = {	error,		// oldError
-						0.0,		// integral
-						1.0,		// maxIntegral
-						120.0,		// Kp
-						0.0002,		// Kd
-						0.05};		// Ki
+	double currentPosition = startAngle;
+	double currentVelocity = 0.0;
+	double lastPosition = currentPosition;
+	double lastTime = 0.0;
+
+
+	PID rotationPID = {0.0,		// integral
+	                   1.0,		// maxIntegral
+	                   120.0,		// Kp
+	                   0.0002,		// Kd
+	                   0.05};		// Ki
 
 	GTimer *motionTimer = g_timer_new();
 	g_timer_start(motionTimer);
 
 	// Motion is completed if we are close enough to the target position and our velocity is small enough.
-	while(ABS(error) > 0.015 || ABS(dError) > 0.05)
+	while(ABS(currentPosition - targetAngle) > 0.015 || ABS(currentVelocity) > 0.05)
 	{
-		// Motion is not completed: compute integral value and PID control.
-		double command = PID_computeValue(&rotationPID, error, dt);
+		// Get trajectory value.
+		double trajectoryPosition, trajectoryVelocity;
+		rotationTrajectory(targetAngle, currentTime, &trajectoryPosition, &trajectoryVelocity);
+		trajectoryPosition += startAngle;
 
+		// Compute PID command
+		double command = PID_computeValue(&rotationPID,
+		                                  currentPosition - trajectoryPosition,
+		                                  currentVelocity - trajectoryVelocity,
+		                                  dt);
 		// If playing on right side, invert command.
 		if(robot_isOnRightSide)
 			command = -command;
@@ -233,17 +316,20 @@ gboolean motion_rotate(double angle)
 		L6470_getError(robotMotors[LEFT]);
 
 		// Wait for time to match loop frequency.
-		double currentTime = g_timer_elapsed(motionTimer, NULL);
-		while(currentTime - lastLoopTime < LOOP_PERIOD)
+		currentTime = g_timer_elapsed(motionTimer, NULL);
+		while(currentTime - lastTime < LOOP_PERIOD)
 		{
 			g_usleep(10);
 			currentTime = g_timer_elapsed(motionTimer, NULL);
 		}
-		error = robot_getPositionTheta() - targetAngle;
-		dt = currentTime - lastLoopTime;
-		dError = (error - rotationPID.oldError) / dt;
-		lastLoopTime = currentTime;
+		// Compute current position, error, velocity.
+		currentPosition = robot_getPositionTheta();
+		dt = (currentTime - lastTime);
+		currentVelocity = (currentPosition - lastPosition) / dt;
+		lastPosition = currentPosition;
+		lastTime = currentTime;
 	}
+
 	L6470_setSpeed(robotMotors[RIGHT], 0);
 	L6470_setSpeed(robotMotors[LEFT], 0);
 	// Wait for motors to be fully stopped.
