@@ -19,28 +19,35 @@
 
 
 // Sensor value threshold to consider a valid detection.
-int IR_FRONT_THRESHOLD = 800;
-int IR_BACK_THRESHOLD = 800;
+int IR_FRONT_THRESHOLD = 600;
+int IR_BACK_THRESHOLD = 600;
 
 // Variables to store weather or not the last timerMain we checked, we saw the opponent's robot.
 // This is used to filter lone sensor pulse due to noise.
 gboolean oldSensorValueBack = FALSE;
 gboolean oldSensorValueFront = FALSE;
+gboolean frontBuffer = FALSE;
+gboolean backBuffer = FALSE;
 
 /// \brief Check the infrared sensors for an obstacle
 /// \details This function is called by the main loop in a timeout.
 /// \return TRUE, to continue the timeout.
 gboolean checkInfrarouge()
 {
-	gboolean sensorValue = (gpio_analogRead(CAPE_ANALOG[0]) > IR_BACK_THRESHOLD) ||
-	                      (gpio_analogRead(CAPE_ANALOG[1]) > IR_BACK_THRESHOLD);
-	robot_IRDetectionBack = sensorValue && oldSensorValueBack;
-	oldSensorValueBack = sensorValue;
+	//~ for(int i =1; i<7; i++)
+		//~ printf("%d ", gpio_analogRead(CAPE_ANALOG[i]));
+	//~ printf("\n");
+	gboolean sensorValue = (gpio_analogRead(CAPE_ANALOG[3]) > IR_BACK_THRESHOLD) ||
+	                      (gpio_analogRead(CAPE_ANALOG[4]) > IR_BACK_THRESHOLD);
+	oldSensorValueBack = robot_IRDetectionBack;
+	robot_IRDetectionBack = sensorValue && backBuffer;
+	backBuffer = sensorValue;
 
-	sensorValue = (gpio_analogRead(CAPE_ANALOG[2]) > IR_BACK_THRESHOLD) ||
-	              (gpio_analogRead(CAPE_ANALOG[3]) > IR_BACK_THRESHOLD);
-	robot_IRDetectionFront = sensorValue && oldSensorValueFront;
-	oldSensorValueFront = sensorValue;
+	sensorValue = (gpio_analogRead(CAPE_ANALOG[2]) > IR_FRONT_THRESHOLD) ||
+	              (gpio_analogRead(CAPE_ANALOG[5]) > IR_FRONT_THRESHOLD);
+	oldSensorValueFront = robot_IRDetectionFront;
+	robot_IRDetectionFront = sensorValue && frontBuffer;
+	frontBuffer = sensorValue;
 
 	// Turn on red led if we see something on any sensor.
 	if(robot_IRDetectionBack || robot_IRDetectionFront)
@@ -126,8 +133,8 @@ gboolean initRobot()
 		lcd_setBacklight(robotLCD, TRUE, FALSE, FALSE);
 		g_usleep(1000000);
 	}
-	//~ else
-		//~ servo_initPosition();
+	else
+		servo_initPosition();
 	isInitSuccessful &= initServo;
 
 	gboolean initMouse = ANDS9800_init(&robotMouseSensor, SPI_0);
@@ -187,6 +194,8 @@ gboolean waitForStart(gboolean isInitDone)
 		while(gpio_digitalRead(CAPE_DIGITAL[0]) == 1)
 			g_usleep(50000);
 		printf("Jack plugged in, waiting for match start\n");
+		// Prevent unwanted start from switch bounce.
+		g_usleep(1000000);
 	}
 	if(isInitDone)
 		lcd_setText(robotLCD, "Ready to start", 0);
@@ -252,7 +261,8 @@ int main(int argc, char **argv)
 	// Init robot hardware.
 	gboolean initDone = initRobot();
 	// Wait for match to start, redoing motor init if previously failed.
-	robot_isOnRightSide = waitForStart(initDone);
+	//~ robot_isOnRightSide = waitForStart(initDone);
+	robot_isOnRightSide = TRUE;
 
 	// Start match, set timer to 100s.
 	timerMain = g_timer_new();
@@ -260,8 +270,8 @@ int main(int argc, char **argv)
 	g_timeout_add(100000, stop_robot, NULL);
 
 	// Set robot to initial position: right of the zone, back against the wall.
-	startingPosition.x = 400 - ROBOT_WIDTH / 2.0;
-	startingPosition.y = -BALL_LENGTH_OFFSET;
+	startingPosition.x = 60 + ROBOT_WIDTH / 2.0;
+	startingPosition.y = -BALL_LENGTH_OFFSET + 40;
 	startingPosition.theta = - G_PI_2;
 	robot_setPosition(startingPosition);
 
@@ -271,9 +281,10 @@ int main(int argc, char **argv)
 
 	// Turn screen backlight to white, display on second line IR sensor status.
 	lcd_setBacklight(robotLCD, TRUE, TRUE, TRUE);
+	lcd_setTextCentered(robotLCD, "Match started", 0);
 	lcd_setText(robotLCD, "IR F:  B: ", 1);
 	// Timeout functions to check on the infrared sensors.
-	g_timeout_add(40, checkInfrarouge, NULL);
+	g_timeout_add(20, checkInfrarouge, NULL);
 	// Run glib main loop.
     g_main_loop_run(loop);
 	return 0;

@@ -1,7 +1,7 @@
 #include "Robot.h"
 
 // Define robot constants.
-const double STEP_TO_SI = G_PI * 90.0 / 800.0;
+const double STEP_TO_SI = G_PI * 90.0 / 400.0;
 
 const double ROBOT_WIDTH = 340;
 const double CANON_OFFSET = 103;
@@ -11,7 +11,7 @@ const double BALL_LENGTH_OFFSET = -156;
 const double BALL_WIDTH_OFFSET = 29;
 const double BIN_OFFSET = 105;
 
-const double GYRO_Z_BIAS = 0.0040;
+const double GYRO_Z_BIAS = 0.0027;
 
 const int RIGHT = 1;
 const int LEFT = 0;

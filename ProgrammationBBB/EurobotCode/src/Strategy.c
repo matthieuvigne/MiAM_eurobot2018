@@ -81,39 +81,41 @@ void *strategy_runMatch()
 	strategyThread = pthread_self();
 	RobotPosition targetPosition = startingPosition;
 
-	//~ motion_translate(500, TRUE);
-	servo_initPosition();
-	g_usleep(1000000);
-
-	while(TRUE)
-	{
-		servo_millTurn();
-	}
+	//~ motion_translate(100, TRUE);
+	//~ motion_rotate(-G_PI_2);
+	//~ while(TRUE) ;;
+	//~ while(TRUE)
+	//~ {
+		//~ servo_millTurn();
+	//~ }
 	//~ g_usleep(100000000);
 	//~ servo_millStop();
 
-	while(TRUE) ;;
+	//~ while(TRUE) ;;
 
-	servo_trayDown();
-	g_usleep(1000000);
-	servo_trayUp();
+	//~ servo_trayDown();
+	//~ g_usleep(1000000);
+	//~ servo_trayUp();
 
 	//~ gatherWater();
 
-	while(TRUE) ;;
+	//~ while(TRUE) ;;
 	// Go the ball catcher under the first tube.
-	//~ targetPosition.y = 840 + BALL_WIDTH_OFFSET;
-	//~ motion_goTo(targetPosition, FALSE, TRUE);
-	//~ targetPosition.x = BALL_LENGTH_OFFSET;
-	//~ motion_goTo(targetPosition, TRUE, TRUE);
-
+	targetPosition.y += 100;
+	motion_goTo(targetPosition, FALSE, TRUE);
+	targetPosition.x += 100;
+	targetPosition.y = 840 + BALL_WIDTH_OFFSET;
+	motion_goTo(targetPosition, FALSE, TRUE);
+	targetPosition.x = -BALL_LENGTH_OFFSET + 80;
+	motion_goTo(targetPosition, TRUE, TRUE);
 	while(TRUE) ;;
+
 	// Graps the first balls.
 
 	// Go back to base to shoot.
 	targetPosition.x += 80;
 	motion_goTo(targetPosition, FALSE, TRUE);
-
+	printf("Done\n");
 	while(TRUE) ;;
 	// Trajecotry for mocap
 	motion_rotate(G_PI_2);

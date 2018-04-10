@@ -3,7 +3,7 @@
 
 // Max robotMotors speed and acceleration, in half counts / s.
 const int MOTOR_MAX_SPEED = 800;
-const int MOTOR_MAX_ACCELERATION = 800;
+const int MOTOR_MAX_ACCELERATION = 300;
 
 // Motor current profile constants, for the 42BYGHW810 robotMotors, 2.0A - these values are computed using ST dSPIN utility.
 const int MOTOR_KVAL_HOLD = 0x2D;
@@ -44,9 +44,8 @@ double PID_computeValue(PID *pid, double positionError, double velocityError, do
 void rotationTrajectory(double targetAngle, double time, double *position, double *velocity)
 {
 	// Rotation trajectory velocity parameters.
-	double ROTATION_MAX_VELOCITY = 0.8 * MOTOR_MAX_SPEED * STEP_TO_SI / ROBOT_WIDTH * 2.0;
-	double ROTATION_MAX_ACCELERATION = 0.8 * MOTOR_MAX_ACCELERATION * STEP_TO_SI / ROBOT_WIDTH * 2.0;
-
+	double ROTATION_MAX_VELOCITY = 0.9 * MOTOR_MAX_SPEED * STEP_TO_SI / ROBOT_WIDTH * 2.0;
+	double ROTATION_MAX_ACCELERATION = 2.0 * MOTOR_MAX_ACCELERATION * STEP_TO_SI / ROBOT_WIDTH * 2.0;
 	int sign = 1;
 	if(targetAngle < 0)
 	{
@@ -139,9 +138,8 @@ double computeRotationAngle(RobotPosition start, RobotPosition end)
 		else
 			startEndAngle =  G_PI + atan( (end.y - start.y)/(end.x - start.x));
 	}
-
 	// Find the rotation angle amount.
-	double rotationAngle = start.theta - startEndAngle;
+	double rotationAngle = startEndAngle - start.theta;
 	while(rotationAngle >= G_PI)
 		rotationAngle -= 2 * G_PI;
 	while(rotationAngle < -G_PI)
@@ -168,7 +166,7 @@ gboolean checkSensor(gboolean backward)
 	robotViewpoint.y -= BORDER_DEADZONE * sin(robotViewpoint.theta);
 
 	if(robotViewpoint.x < 0 || robotViewpoint.x > 3000 || robotViewpoint.y < 0 || robotViewpoint.y > 2000)
-		return TRUE;
+		return FALSE;
 
 	if(backward)
 		return robot_IRDetectionBack;
@@ -181,7 +179,7 @@ gboolean motion_initMotors()
 	gboolean result = TRUE;
 
 	L6470_initStructure(&robotMotors[RIGHT], SPI_10);
-    L6470_initMotion(robotMotors[RIGHT], MOTOR_MAX_SPEED, MOTOR_MAX_ACCELERATION, MOTOR_MAX_ACCELERATION);
+    L6470_initMotion(robotMotors[RIGHT], MOTOR_MAX_SPEED, MOTOR_MAX_ACCELERATION);
     L6470_initBEMF(robotMotors[RIGHT], MOTOR_KVAL_HOLD, MOTOR_BEMF[0], MOTOR_BEMF[1], MOTOR_BEMF[2], MOTOR_BEMF[3]);
 	if(L6470_getParam(robotMotors[RIGHT], dSPIN_KVAL_HOLD) != MOTOR_KVAL_HOLD)
 	{
@@ -189,7 +187,7 @@ gboolean motion_initMotors()
 		result =  FALSE;
 	}
 	L6470_initStructure(&robotMotors[LEFT], SPI_11);
-    L6470_initMotion(robotMotors[LEFT], MOTOR_MAX_SPEED, MOTOR_MAX_ACCELERATION, MOTOR_MAX_ACCELERATION);
+    L6470_initMotion(robotMotors[LEFT], MOTOR_MAX_SPEED, MOTOR_MAX_ACCELERATION);
     L6470_initBEMF(robotMotors[LEFT], MOTOR_KVAL_HOLD, MOTOR_BEMF[0], MOTOR_BEMF[1], MOTOR_BEMF[2], MOTOR_BEMF[3]);
 	if(L6470_getParam(robotMotors[LEFT], dSPIN_KVAL_HOLD) != MOTOR_KVAL_HOLD)
 	{
@@ -230,7 +228,6 @@ gboolean motion_translate(double distance, gboolean readSensor)
 	int32_t distancestep = (int) floor(distance / STEP_TO_SI);
 	for(int i = 0; i < 2; i++)
 		L6470_goToPosition(robotMotors[i], distancestep);
-
 	g_usleep(20000);
 	// Wait for motion to be completed.
 	while(L6470_isBusy(robotMotors[RIGHT]) != 0 || L6470_isBusy(robotMotors[LEFT]) != 0)
@@ -292,13 +289,12 @@ gboolean motion_rotate(double motionAngle)
 	g_timer_start(motionTimer);
 
 	// Motion is completed if we are close enough to the target position and our velocity is small enough.
-	while(ABS(currentPosition - targetAngle) > 0.015 || ABS(currentVelocity) > 0.05)
+	while((ABS(currentPosition - targetAngle) > 0.015 || ABS(currentVelocity) > 0.05) && currentTime < 8)
 	{
 		// Get trajectory value.
 		double trajectoryPosition, trajectoryVelocity;
-		rotationTrajectory(targetAngle, currentTime, &trajectoryPosition, &trajectoryVelocity);
+		rotationTrajectory(motionAngle, currentTime, &trajectoryPosition, &trajectoryVelocity);
 		trajectoryPosition += startAngle;
-
 		// Compute PID command
 		double command = PID_computeValue(&rotationPID,
 		                                  currentPosition - trajectoryPosition,
@@ -329,7 +325,8 @@ gboolean motion_rotate(double motionAngle)
 		lastPosition = currentPosition;
 		lastTime = currentTime;
 	}
-
+	if(currentTime >= 8)
+		printf("ROTATION MOTION TIMEOUT\n");
 	L6470_setSpeed(robotMotors[RIGHT], 0);
 	L6470_setSpeed(robotMotors[LEFT], 0);
 	// Wait for motors to be fully stopped.
@@ -343,6 +340,7 @@ gboolean motion_goTo(RobotPosition pos, gboolean backward, gboolean checkInfrare
 {
 	// Compute rotation to go to target.
 	double rotationAngle = computeRotationAngle(robot_getPosition(), pos);
+
 	if(backward)
 	{
 		if(rotationAngle < 0)
@@ -353,7 +351,6 @@ gboolean motion_goTo(RobotPosition pos, gboolean backward, gboolean checkInfrare
 	// Perform the rotation, return if the rotation fails.
 	if(!motion_rotate(rotationAngle))
 		return FALSE;
-
 	// Calculate the distance.
 	double cx = robot_getPositionX();
 	double cy = robot_getPositionY();
