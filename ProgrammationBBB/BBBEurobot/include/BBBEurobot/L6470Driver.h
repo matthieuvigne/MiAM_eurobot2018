@@ -37,9 +37,9 @@
     /// \note   This function does not initialize the L6470 structure.
     /// \param[in] l A valid L6470 structure.
     /// \param[in] maxSpeed Maximum motor speed, in steps/s (from 15.25 to 15610, resolution 15.25 step/s).
-    /// \param[in] acc Target motor acceleration, in steps/s^2 (from 14.55 to 59590, resolution 14.55 step/s^2).
-    /// \param[in] dec Target motor deceleration, in steps/s^2 (from 14.55 to 59590, resolution 14.55 step/s^2).
-	void L6470_initMotion(L6470 l, int maxSpeed, int accel, int decel);
+    /// \param[in] maxAcceleration Maximum motor acceleration and deceleration, in steps/s^2 (from 14.55 to 59590,
+    ///                            resolution 14.55 step/s^2).
+	void L6470_initMotion(L6470 l, int maxSpeed, int maxAcceleration);
 
 
 	/// \brief Define BEMF compensation and target current constants.
@@ -77,6 +77,30 @@
     /// \param[in] l A valid L6470 structure.
     /// \returns The current motor speed, in steps/s.
 	double L6470_getSpeed(L6470 l);
+
+
+	// STEP_MODE option values.
+	// First comes the "microsteps per step" options...
+	typedef enum DSPIN_STEP_MODE_CONST
+	{
+		dSPIN_STEP_MODE_STEP_SEL    = 0x07,  // Mask for these bits.
+		dSPIN_STEP_SEL_1            = 0x00,
+		dSPIN_STEP_SEL_1_2          = 0x01,
+		dSPIN_STEP_SEL_1_4          = 0x02,
+		dSPIN_STEP_SEL_1_8          = 0x03,
+		dSPIN_STEP_SEL_1_16         = 0x04,
+		dSPIN_STEP_SEL_1_32         = 0x05,
+		dSPIN_STEP_SEL_1_64         = 0x06,
+		dSPIN_STEP_SEL_1_128        = 0x07
+
+	} DSPIN_STEP_MODE_CONST;
+
+	/// \brief Set motor driver step mode.
+	///
+	/// \warning After this function call, the value of the position register changes.
+    /// \param[in] l A valid L6470 structure.
+    /// \param[in] stepMode Target step mode (full step to 1/128th step).
+	void L6470_setStepMode(L6470 l, DSPIN_STEP_MODE_CONST stepMode);
 
 
 	/// \brief Set current motor speed.
@@ -167,23 +191,6 @@
 		dSPIN_OCD_TH_6000mA = 0x0F
 
 	} DSPIN_OVERCURRENT_CONST;
-
-
-	// STEP_MODE option values.
-	// First comes the "microsteps per step" options...
-	typedef enum DSPIN_STEP_MODE_CONST
-	{
-		dSPIN_STEP_MODE_STEP_SEL    = 0x07,  // Mask for these bits.
-		dSPIN_STEP_SEL_1            = 0x00,
-		dSPIN_STEP_SEL_1_2          = 0x01,
-		dSPIN_STEP_SEL_1_4          = 0x02,
-		dSPIN_STEP_SEL_1_8          = 0x03,
-		dSPIN_STEP_SEL_1_16         = 0x04,
-		dSPIN_STEP_SEL_1_32         = 0x05,
-		dSPIN_STEP_SEL_1_64         = 0x06,
-		dSPIN_STEP_SEL_1_128        = 0x07
-
-	} DSPIN_STEP_MODE_CONST;
 
 
 	typedef enum DSPIN_REG_CONST

@@ -97,19 +97,18 @@ uint32_t L6470_getParam(L6470 l, uint8_t param)
 	return sendCommand(l, dSPIN_GET_PARAM | param, 0, paramLength(param));
 }
 
-void L6470_initMotion(L6470 l, int maxSpeed, int accel, int decel)
+void L6470_initMotion(L6470 l, int maxSpeed, int maxAcceleration)
 {
 	// Set bridget output to high impedence.
 	sendCommand(l, dSPIN_SOFT_HIZ, 0, 0);
     // Reset device.
     sendCommand(l, dSPIN_ACTION_RESET, 0, 0);
     //~ g_usleep(50000);
-    // Set step mode param.
-    // Half step operation: double precision, but reduces motor torque between two steps (by about 30%).
-    setParam(l, dSPIN_STEP_MODE, 1);
+    // Set full step mode.
+    setParam(l, dSPIN_STEP_MODE, 0);
     sendCommand(l, dSPIN_RESET_POS, 0, 0);
     // Set velocity profile data.
-    L6470_setVelocityProfile(l, maxSpeed, accel, decel);
+    L6470_setVelocityProfile(l, maxSpeed, maxAcceleration, maxAcceleration);
     // Set config param.
     setParam(l, dSPIN_CONFIG, dSPIN_CONFIG_PWM_DIV_1          | dSPIN_CONFIG_PWM_MUL_2
                   | dSPIN_CONFIG_SR_290V_us       | dSPIN_CONFIG_OC_SD_DISABLE
@@ -196,6 +195,13 @@ void L6470_setVelocityProfile(L6470 l, int maxSpeed, int accel, int decel)
     setParam(l, dSPIN_DEC, regVal);
 }
 
+void L6470_setStepMode(L6470 l, DSPIN_STEP_MODE_CONST stepMode)
+{
+    sendCommand(l, dSPIN_SOFT_HIZ,0 ,0);
+    // Wait for motor to fully stop.
+    g_usleep(100000);
+    setParam(l, dSPIN_STEP_MODE, stepMode);
+}
 
 void L6470_softStop(L6470 l)
 {
