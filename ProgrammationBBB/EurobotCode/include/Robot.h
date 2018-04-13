@@ -55,6 +55,9 @@
 	///< Robot mechanical dimensions, see Robot.c.
 	extern const double STEP_TO_SI; ///< Conversion ratio between a motor step and a millimeter.
 	extern const double ROBOT_WIDTH; ///< Distance between both wheels, in mm.
+	extern const double CHASSIS_BACK; ///< Distance between wheel axis and back of robot plate.
+	extern const double CHASSIS_FRONT; ///< Distance between wheel axis and front of robot plate.
+	extern const double CHASSIS_SIDE; ///< Distance between wheel axis and front of robot plate.
 	extern const double CANON_OFFSET; ///< Distance between robot center and canon, in mm.
 	extern const double CLAW_OFFSET; ///< Distance between robot center and cube claw, in mm.
 	extern const double MOUSE_SENSOR_OFFSET; ///< Distance between robot center and mouse sensor, in mm.

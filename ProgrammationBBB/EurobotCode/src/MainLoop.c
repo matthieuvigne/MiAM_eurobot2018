@@ -270,8 +270,8 @@ int main(int argc, char **argv)
 	g_timeout_add(100000, stop_robot, NULL);
 
 	// Set robot to initial position: right of the zone, back against the wall.
-	startingPosition.x = 60 + ROBOT_WIDTH / 2.0;
-	startingPosition.y = -BALL_LENGTH_OFFSET + 40;
+	startingPosition.x = 40 + CHASSIS_SIDE;
+	startingPosition.y = 60 + CHASSIS_BACK;
 	startingPosition.theta = - G_PI_2;
 	robot_setPosition(startingPosition);
 

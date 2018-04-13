@@ -4,10 +4,13 @@
 const double STEP_TO_SI = G_PI * 90.0 / 400.0;
 
 const double ROBOT_WIDTH = 340;
+const double CHASSIS_BACK = 145;
+const double CHASSIS_FRONT = 145;
+const double CHASSIS_SIDE = 155;
 const double CANON_OFFSET = 103;
 const double CLAW_OFFSET = 120;
-const double MOUSE_SENSOR_OFFSET = -110;
-const double BALL_LENGTH_OFFSET = -156;
+const double MOUSE_SENSOR_OFFSET = 110;
+const double BALL_LENGTH_OFFSET = 156;
 const double BALL_WIDTH_OFFSET = 29;
 const double BIN_OFFSET = 105;
 

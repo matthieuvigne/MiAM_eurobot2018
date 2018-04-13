@@ -103,58 +103,49 @@ void *strategy_runMatch()
 	// Go the ball catcher under the first tube.
 	targetPosition.y += 100;
 	motion_goTo(targetPosition, FALSE, TRUE);
-	targetPosition.x += 100;
+	servo_ballDirectionCanon
+	targetPosition.x += 150;
 	targetPosition.y = 840 + BALL_WIDTH_OFFSET;
 	motion_goTo(targetPosition, FALSE, TRUE);
-	targetPosition.x = -BALL_LENGTH_OFFSET + 80;
-	motion_goTo(targetPosition, TRUE, TRUE);
+	targetPosition.x = BALL_LENGTH_OFFSET + 100;
+	motion_goTo(targetPosition, TRUE, FALSE);
 	while(TRUE) ;;
 
 	// Graps the first balls.
 
-	// Go back to base to shoot.
-	targetPosition.x += 80;
+	// Go around the cubes to launch the bee.
+	targetPosition.x += 800;
 	motion_goTo(targetPosition, FALSE, TRUE);
-	printf("Done\n");
-	while(TRUE) ;;
-	// Trajecotry for mocap
-	motion_rotate(G_PI_2);
-	printf("Rotation done\n");
-	while(TRUE);;
-	// Straight line
-	motion_translate(0.5, FALSE);
-	g_usleep(500000);
-	g_usleep(500000);
-	motion_translate(-0.5, FALSE);
-	g_usleep(500000);
+	targetPosition.y = 1600;
+	motion_goTo(targetPosition, FALSE, TRUE);
+	targetPosition.x = 200;
+	motion_goTo(targetPosition, FALSE, TRUE);
+	targetPosition.y = 2000 - CHASSIS_FRONT;
+	motion_goTo(targetPosition, FALSE, TRUE);
 
-	// Rotation
-	motion_rotate(G_PI_2);
-	g_usleep(500000);
-	motion_rotate(-G_PI_2);
-	g_usleep(500000);
+	// Hit table side so reset the robot position.
+	motion_translate(30, FALSE);
+	RobotPosition resetPosition = robot_getPosition();
+	resetPosition.y = 2000 - CHASSIS_FRONT;
+	resetPosition.theta = - G_PI_2;
+	localisation_reset(resetPosition, FALSE, TRUE, TRUE);
+	// Launch bee.
 
-	// Draw square
-	double squareSize = 0.5;
-	RobotPosition pos = robot_getPosition();
-	pos.x += squareSize;
-	motion_goTo(pos, FALSE, FALSE);
-	pos.y += squareSize;
-	motion_goTo(pos, FALSE, FALSE);
-	pos.x -= squareSize;
-	motion_goTo(pos, FALSE, FALSE);
-	pos.y -= squareSize;
-	motion_goTo(pos, FALSE, FALSE);
+	// Go back to grasp first three cubes.
+	motion_translate(-100);
+	targetPosition.x = 300;
+	targetPosition.y = 1700;
+	motion_goTo(targetPosition, FALSE, TRUE);
 
-	pos.x += squareSize;
-	motion_goTo(pos, FALSE, FALSE);
-	pos.y -= squareSize;
-	motion_goTo(pos, FALSE, FALSE);
-	pos.x -= squareSize;
-	motion_goTo(pos, FALSE, FALSE);
-	pos.y += squareSize;
-	motion_goTo(pos, FALSE, FALSE);
+	// Lower claw, then grasp cubes.
+	targetPosition.y = 1190 + 60 + CLAW_OFFSET;
+	motion_goTo(targetPosition, FALSE, TRUE);
 
+	// Raise claw, go back to base to set cubes and launch balls.
+
+	targetPosition.x = 200;
+	targetPosition.y = 200;
+	motion_goTo(targetPosition, FALSE, TRUE);
 
 	printf("Strategy ended\n");
 	return 0;
