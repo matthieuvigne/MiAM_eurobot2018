@@ -158,8 +158,8 @@ gboolean initRobot()
 	else
 	{
 		// Setup sensor
-		colorSensor_setGain(robotColorSensor, TCS34725_GAIN_60X);
-		colorSensor_setIntegrationTime(robotColorSensor, 10);
+		colorSensor_setGain(robotColorSensor, TCS34725_GAIN_16X);
+		colorSensor_setIntegrationTime(robotColorSensor, 15);
 	}
 	isInitSuccessful &= initColor;
 
@@ -255,7 +255,7 @@ int main(int argc, char **argv)
 	// Init beaglebone.
 	BBB_enableCape();
 	// Create a GMainLoop
-	GMainLoop* loop = g_main_loop_new(0, 0 	);
+	GMainLoop* loop = g_main_loop_new(0, 0);
 	// Start heartbeat thead.
 	g_thread_new("Heartbeat", heartbeatThread, NULL);
 	// Init robot hardware.
@@ -270,7 +270,7 @@ int main(int argc, char **argv)
 	g_timeout_add(100000, stop_robot, NULL);
 
 	// Set robot to initial position: right of the zone, back against the wall.
-	startingPosition.x = 40 + CHASSIS_SIDE;
+	startingPosition.x = 60 + CHASSIS_SIDE;
 	startingPosition.y = 60 + CHASSIS_BACK;
 	startingPosition.theta = - G_PI_2;
 	robot_setPosition(startingPosition);
