@@ -208,6 +208,11 @@ void L6470_softStop(L6470 l)
     sendCommand(l, dSPIN_SOFT_STOP, 0 , 0);
 }
 
+void L6470_hardStop(L6470 l)
+{
+    sendCommand(l, dSPIN_HARD_STOP, 0 , 0);
+}
+
 
 uint32_t L6470_getStatus(L6470 l)
 {
