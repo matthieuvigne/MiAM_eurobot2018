@@ -20,6 +20,9 @@
 	/// \details This function should be called before code terminates.
 	void motion_stopMotors();
 
+	/// \brief Performs a hard motor stop, without setting them to high impedence.
+	void motion_stopMotorsHard();
+
 	/// \brief Moves the robot a specified distance.
 	/// \details Note that this function does a translation of the robot, not of one motor
 	///			 (both motors move the same amount). This function blocks until either the

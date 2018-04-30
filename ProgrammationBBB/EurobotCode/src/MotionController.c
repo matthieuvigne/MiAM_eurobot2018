@@ -209,6 +209,13 @@ void motion_stopMotors()
 }
 
 
+void motion_stopMotorsHard()
+{
+    L6470_hardStop(robotMotors[RIGHT]);
+    L6470_hardStop(robotMotors[LEFT]);
+}
+
+
 gboolean motion_translate(double distance, gboolean readSensor)
 {
 	// Don't move if travel distance is less than 2mm.
@@ -245,7 +252,10 @@ gboolean motion_translate(double distance, gboolean readSensor)
 			g_usleep(5000000);
 			// If there is still an obstacle, abort.
 			if(checkSensor(distance < 0))
+			{
+				motion_stopMotorsHard();
 				return FALSE;
+			}
 			else
 			{
 				// Try to complete motion.
@@ -254,10 +264,7 @@ gboolean motion_translate(double distance, gboolean readSensor)
 			}
 		}
 	}
-	motion_stopMotors();
-	// Wait for motors to be fully stopped.
-	while(L6470_isBusy(robotMotors[RIGHT]) != 0 || L6470_isBusy(robotMotors[LEFT]) != 0)
-		g_usleep(20000);
+	motion_stopMotorsHard();
 	return TRUE;
 }
 
@@ -328,13 +335,7 @@ gboolean motion_rotate(double motionAngle)
 	}
 	if(currentTime >= 10)
 		printf("ROTATION MOTION TIMEOUT\n");
-	//~ L6470_setSpeed(robotMotors[RIGHT], 0);
-	//~ L6470_setSpeed(robotMotors[LEFT], 0);
-	L6470_hardStop(robotMotors[RIGHT]);
-	L6470_hardStop(robotMotors[LEFT]);
-	// Wait for motors to be fully stopped.
-	//~ while(L6470_isBusy(robotMotors[RIGHT]) != 0 || L6470_isBusy(robotMotors[LEFT]) != 0)
-		//~ g_usleep(20000);
+	motion_stopMotorsHard();
 	return TRUE;
 }
 

@@ -83,7 +83,8 @@
 	///< Servo actions. Note that these functions do not wait for the servo action to be done.
 	static inline void servo_openWaterTank()
 	{
-		maestro_setPosition(robotServo, 0, 2000);
+		maestro_setSpeed(robotServo, 0, 1400);
+		maestro_setPosition(robotServo, 0, 2200);
 	}
 
 	static inline void servo_closeWaterTank()
@@ -148,12 +149,12 @@
 
 	static inline void servo_millStop()
 	{
-		maestro_setPosition(robotServo, 12, 1500);
+		maestro_setPosition(robotServo, 12, 0);
 	}
 
 	static inline void servo_startCannon()
 	{
-		maestro_setPosition(robotServo, 13, 1750);
+		maestro_setPosition(robotServo, 13, 1880);
 	}
 
 	static inline void servo_stopCannon()
@@ -171,6 +172,17 @@
 		maestro_setPosition(robotServo, 14, 2400);
 	}
 
+	static inline void servo_clawUp()
+	{
+		maestro_setPosition(robotServo, 3, 2480);
+		maestro_setPosition(robotServo, 4, 520);
+	}
+
+	static inline void servo_clawLightSwitch()
+	{
+		maestro_setPosition(robotServo, 3, 1870);
+		maestro_setPosition(robotServo, 4, 1130);
+	}
 	/// Send all servos to initial position.
 	static inline void servo_initPosition()
 	{
@@ -190,7 +202,8 @@
 		servo_ballDirectionCenter();
 		servo_trayDown();
 		servo_stopCannon();
-		maestro_setSpeed(robotServo, 14, 600);
+		maestro_setSpeed(robotServo, 14, 1200);
 		servo_beeRetract();
+		servo_clawUp();
 	}
  #endif

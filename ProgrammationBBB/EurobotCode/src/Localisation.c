@@ -14,6 +14,7 @@ void localisation_reset(RobotPosition resetPosition, gboolean resetX, gboolean r
 	isYReset = resetY;
 	isThetaReset = resetTheta;
 	resetLocalisation = TRUE;
+	g_usleep(1.1 * 1000000 * LOOP_PERIOD);
 }
 
 void *localisation_start()

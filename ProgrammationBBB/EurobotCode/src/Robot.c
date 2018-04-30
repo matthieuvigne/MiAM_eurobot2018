@@ -14,7 +14,7 @@ const double BALL_LENGTH_OFFSET = 156;
 const double BALL_WIDTH_OFFSET = 29;
 const double BIN_OFFSET = 105;
 
-const double GYRO_Z_BIAS = 0.0016;
+const double GYRO_Z_BIAS = -0.00002;
 
 const int RIGHT = 1;
 const int LEFT = 0;
