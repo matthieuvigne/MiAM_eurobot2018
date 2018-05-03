@@ -83,13 +83,13 @@
 	///< Servo actions. Note that these functions do not wait for the servo action to be done.
 	static inline void servo_openWaterTank()
 	{
-		maestro_setSpeed(robotServo, 0, 1400);
+		//~ maestro_setSpeed(robotServo, 0, 2000);
 		maestro_setPosition(robotServo, 0, 2200);
 	}
 
 	static inline void servo_closeWaterTank()
 	{
-		maestro_setPosition(robotServo, 0, 950);
+		maestro_setPosition(robotServo, 0, 1000);
 	}
 
 	static inline void servo_ballDirectionCenter()
@@ -122,24 +122,25 @@
 	// Unlike the other, this function is blocking.
 	static inline void servo_openClaws()
 	{
-		maestro_setPosition(robotServo, 3, 2000);
-		while(gpio_digitalRead(CAPE_DIGITAL[2]) == 1)
+		maestro_setPosition(robotServo, 5, 2100);
+		while(gpio_digitalRead(CAPE_DIGITAL[1]) == 1)
 			g_usleep(10000);
-		maestro_setPosition(robotServo, 3, 1500);
+		maestro_setPosition(robotServo, 5, 1500);
 
 	}
 
 	static inline void servo_closeClaws()
 	{
-		maestro_setPosition(robotServo, 3, 1000);
-		while(gpio_digitalRead(CAPE_DIGITAL[1]) == 1)
-			g_usleep(10000);
-		maestro_setPosition(robotServo, 3, 1500);
+		maestro_setPosition(robotServo, 5, 900);
+		g_usleep(20000000);
+		//~ while(gpio_digitalRead(CAPE_DIGITAL[2]) == 1)
+			//~ g_usleep(10000);
+		maestro_setPosition(robotServo, 5, 1500);
 	}
 
 	static inline void servo_millTurn()
 	{
-		maestro_setPosition(robotServo, 12, 1350);
+		maestro_setPosition(robotServo, 12, 1375);
 	}
 
 	static inline void servo_millTurnBackward()
@@ -180,9 +181,16 @@
 
 	static inline void servo_clawLightSwitch()
 	{
-		maestro_setPosition(robotServo, 3, 1870);
-		maestro_setPosition(robotServo, 4, 1130);
+		maestro_setPosition(robotServo, 3, 1805);
+		maestro_setPosition(robotServo, 4, 1215);
 	}
+
+	static inline void servo_clawDown()
+	{
+		maestro_setPosition(robotServo, 3, 1800);
+		maestro_setPosition(robotServo, 4, 1200);
+	}
+
 	/// Send all servos to initial position.
 	static inline void servo_initPosition()
 	{
@@ -198,12 +206,14 @@
 			maestro_setSpeed(robotServo, i, 0);
 			g_usleep(50000);
 		}
-		servo_closeWaterTank();
+		servo_openWaterTank();
 		servo_ballDirectionCenter();
 		servo_trayDown();
 		servo_stopCannon();
 		maestro_setSpeed(robotServo, 14, 1200);
 		servo_beeRetract();
+		maestro_setSpeed(robotServo, 3, 1200);
+		maestro_setSpeed(robotServo, 4, 1200);
 		servo_clawUp();
 	}
  #endif

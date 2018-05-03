@@ -2,8 +2,8 @@
 #include "MotionController.h"
 
 // Max robotMotors speed and acceleration, in half counts / s.
-const int MOTOR_MAX_SPEED = 900;
-const int MOTOR_MAX_ACCELERATION = 550;
+const int MOTOR_MAX_SPEED = 700;
+const int MOTOR_MAX_ACCELERATION = 500;
 
 // Motor current profile constants, for the 42BYGHW810 robotMotors, 2.0A - these values are computed using ST dSPIN utility.
 const int MOTOR_KVAL_HOLD = 0x2D;
@@ -216,6 +216,18 @@ void motion_stopMotorsHard()
 }
 
 
+void motion_setVelocityProfile(int maxSpeed, int maxAccel)
+{
+	motion_stopMotorsHard();
+	L6470_setVelocityProfile(robotMotors[RIGHT], maxSpeed, maxAccel, maxAccel);
+	L6470_setVelocityProfile(robotMotors[LEFT], maxSpeed, maxAccel, maxAccel);
+}
+
+void motion_resetVelocityProfile()
+{
+	motion_setVelocityProfile(MOTOR_MAX_SPEED, MOTOR_MAX_ACCELERATION);
+}
+
 gboolean motion_translate(double distance, gboolean readSensor)
 {
 	// Don't move if travel distance is less than 2mm.
@@ -263,6 +275,35 @@ gboolean motion_translate(double distance, gboolean readSensor)
 				L6470_goToPosition(robotMotors[LEFT], distancestep -  L6470_getPosition(robotMotors[LEFT]) + startEncoder[LEFT]);
 			}
 		}
+	}
+	motion_stopMotorsHard();
+	return TRUE;
+}
+
+gboolean motion_shake(double distance)
+{
+	// Don't move if travel distance is less than 2mm.
+	if(ABS(distance) < 0.002)
+		return TRUE;
+
+	// Clear error register.
+	L6470_getError(robotMotors[RIGHT]);
+	L6470_getError(robotMotors[LEFT]);
+
+
+	// Give target to the motors.
+	int32_t distancestep = (int) floor(distance / STEP_TO_SI);
+
+	L6470_goToPosition(robotMotors[RIGHT], distancestep);
+	L6470_goToPosition(robotMotors[LEFT], -distancestep);
+
+	g_usleep(20000);
+	// Wait for motion to be completed.
+	while(L6470_isBusy(robotMotors[RIGHT]) != 0 || L6470_isBusy(robotMotors[LEFT]) != 0)
+	{
+		g_usleep(20000);
+		L6470_getError(robotMotors[RIGHT]);
+		L6470_getError(robotMotors[LEFT]);
 	}
 	motion_stopMotorsHard();
 	return TRUE;

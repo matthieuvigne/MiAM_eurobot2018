@@ -34,6 +34,12 @@
 	/// \returns TRUE if target position has been reached, FALSE if an obstacle has stopped it before.
 	gboolean motion_translate(double distance, gboolean readSensor);
 
+	gboolean motion_shake(double distance);
+
+	void motion_setVelocityProfile(int maxSpeed, int maxAccel);
+
+	void motion_resetVelocityProfile();
+
 	/// \brief Rotate the robot of a relative angle.
 	/// \details The angle is a relative angle (in rad) to turn. This function blocks until
 	///			 the move is completed. This motion is done using speed control of the motors, and a PID controler.

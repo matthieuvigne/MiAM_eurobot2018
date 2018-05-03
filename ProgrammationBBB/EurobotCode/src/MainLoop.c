@@ -19,8 +19,8 @@
 
 
 // Sensor value threshold to consider a valid detection.
-int IR_FRONT_THRESHOLD = 600;
-int IR_BACK_THRESHOLD = 600;
+int IR_FRONT_THRESHOLD = 800;
+int IR_BACK_THRESHOLD = 800;
 
 // Variables to store weather or not the last timerMain we checked, we saw the opponent's robot.
 // This is used to filter lone sensor pulse due to noise.
@@ -262,7 +262,7 @@ int main(int argc, char **argv)
 	gboolean initDone = initRobot();
 	// Wait for match to start, redoing motor init if previously failed.
 	//~ robot_isOnRightSide = waitForStart(initDone);
-	robot_isOnRightSide = TRUE;
+	robot_isOnRightSide = FALSE;
 
 	// Start match, set timer to 100s.
 	timerMain = g_timer_new();
@@ -270,19 +270,20 @@ int main(int argc, char **argv)
 	g_timeout_add(100000, stop_robot, NULL);
 
 	// Set robot to initial position: right of the zone, back against the wall.
-	startingPosition.x = 60 + CHASSIS_SIDE;
-	startingPosition.y = 60 + CHASSIS_BACK;
-	startingPosition.theta = - G_PI_2;
+	startingPosition.x = 60 + CHASSIS_BACK;
+	startingPosition.y = 60 + CHASSIS_SIDE;
+	startingPosition.theta = 0;
 	robot_setPosition(startingPosition);
+
+	// Turn screen backlight to white, display on second line IR sensor status.
+	lcd_setBacklight(robotLCD, TRUE, TRUE, TRUE);
+	lcd_setText(robotLCD, "Score:          ", 0);
+	lcd_setText(robotLCD, "IR F:  B: ", 1);
 
 	// Launch the strategy thread
 	g_thread_new("Strategy", strategy_runMatch, NULL);
 	g_thread_new("Localisation", localisation_start, NULL);
 
-	// Turn screen backlight to white, display on second line IR sensor status.
-	lcd_setBacklight(robotLCD, TRUE, TRUE, TRUE);
-	lcd_setTextCentered(robotLCD, "Match started", 0);
-	lcd_setText(robotLCD, "IR F:  B: ", 1);
 	// Timeout functions to check on the infrared sensors.
 	g_timeout_add(20, checkInfrarouge, NULL);
 	// Run glib main loop.
