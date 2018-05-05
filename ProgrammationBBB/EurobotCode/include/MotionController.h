@@ -61,4 +61,6 @@
 	/// \returns TRUE if target position has been reached, FALSE if an obstacle has stopped it before.
 	gboolean motion_goTo(RobotPosition pos, gboolean backward, gboolean checkInfrared);
 
+
+	extern gboolean stopOnSwitch;
 #endif

@@ -7,7 +7,7 @@ const int MOTOR_MAX_ACCELERATION = 500;
 
 // Motor current profile constants, for the 42BYGHW810 robotMotors, 2.0A - these values are computed using ST dSPIN utility.
 const int MOTOR_KVAL_HOLD = 0x2D;
-const int MOTOR_BEMF[4] = {0x3C, 0x172E, 0xE, 0x39};
+const int MOTOR_BEMF[4] = {0x30, 0x172E, 0xE, 0x39};
 
 
 // Generic implementation of a PID controller.
@@ -19,6 +19,7 @@ typedef struct{
 	double Ki;			///< Integral gain.
 }PID;
 
+gboolean stopOnSwitch = FALSE;
 
 // Compute next value of PID command, given the new error and the elapsed time.
 double PID_computeValue(PID *pid, double positionError, double velocityError, double dt)
@@ -167,6 +168,9 @@ gboolean checkSensor(gboolean backward)
 
 	if(robotViewpoint.x < 0 || robotViewpoint.x > 3000 || robotViewpoint.y < 0 || robotViewpoint.y > 2000)
 		return FALSE;
+	// Ignore bottom ball catcher.
+	if((robotViewpoint.x < 900 && robotViewpoint.x > 400) && robotViewpoint.y > 1720)
+		return FALSE;
 
 	if(backward)
 		return robot_IRDetectionBack;
@@ -249,7 +253,8 @@ gboolean motion_translate(double distance, gboolean readSensor)
 		L6470_goToPosition(robotMotors[i], distancestep);
 	g_usleep(20000);
 	// Wait for motion to be completed.
-	while(L6470_isBusy(robotMotors[RIGHT]) != 0 || L6470_isBusy(robotMotors[LEFT]) != 0)
+	while((L6470_isBusy(robotMotors[RIGHT]) != 0 || L6470_isBusy(robotMotors[LEFT]) != 0) &&
+		 (!stopOnSwitch || gpio_digitalRead(CAPE_DIGITAL[3]) == 1))
 	{
 		g_usleep(20000);
 		L6470_getError(robotMotors[RIGHT]);
@@ -260,8 +265,8 @@ gboolean motion_translate(double distance, gboolean readSensor)
 			// An obstacle has been seen: stop the motors, wait 5 sec
 			//~ L6470_hardStop(robotMotors[RIGHT]);
 			//~ L6470_hardStop(robotMotors[LEFT]);
-			motion_stopMotors();
-			g_usleep(5000000);
+			motion_stopMotorsHard();
+			g_usleep(3000000);
 			// If there is still an obstacle, abort.
 			if(checkSensor(distance < 0))
 			{
@@ -336,7 +341,7 @@ gboolean motion_rotate(double motionAngle)
 	GTimer *motionTimer = g_timer_new();
 	g_timer_start(motionTimer);
 	// Motion is completed if we are close enough to the target position and our velocity is small enough.
-	while((ABS(currentPosition - targetAngle) > 0.01 || ABS(currentVelocity) > 0.2) && currentTime < 10)
+	while((ABS(currentPosition - targetAngle) > 0.007 || ABS(currentVelocity) > 0.25) && currentTime < 10)
 	{
 		// Get trajectory value.
 		double trajectoryPosition, trajectoryVelocity;

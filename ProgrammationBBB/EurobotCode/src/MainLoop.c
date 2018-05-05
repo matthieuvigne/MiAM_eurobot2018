@@ -20,7 +20,7 @@
 
 // Sensor value threshold to consider a valid detection.
 int IR_FRONT_THRESHOLD = 800;
-int IR_BACK_THRESHOLD = 800;
+int IR_BACK_THRESHOLD = 1000;
 
 // Variables to store weather or not the last timerMain we checked, we saw the opponent's robot.
 // This is used to filter lone sensor pulse due to noise.
@@ -56,21 +56,21 @@ gboolean checkInfrarouge()
 		gpio_digitalWrite(CAPE_LED[1], 0);
 
 	// Update LCD, if needed, to say which sensors sees something.
-	if(oldSensorValueFront != robot_IRDetectionFront)
-	{
-		if(robot_IRDetectionFront)
-			lcd_setChar(robotLCD, 'Y', 1, 5);
-		else
-			lcd_setChar(robotLCD, ' ', 1, 5);
-	}
+	//~ if(oldSensorValueFront != robot_IRDetectionFront)
+	//~ {
+		//~ if(robot_IRDetectionFront)
+			//~ lcd_setChar(robotLCD, 'Y', 1, 5);
+		//~ else
+			//~ lcd_setChar(robotLCD, ' ', 1, 5);
+	//~ }
 
-	if(oldSensorValueBack != robot_IRDetectionBack)
-	{
-		if(robot_IRDetectionBack)
-			lcd_setChar(robotLCD, 'Y', 1, 9);
-		else
-			lcd_setChar(robotLCD, ' ', 1, 9);
-	}
+	//~ if(oldSensorValueBack != robot_IRDetectionBack)
+	//~ {
+		//~ if(robot_IRDetectionBack)
+			//~ lcd_setChar(robotLCD, 'Y', 1, 9);
+		//~ else
+			//~ lcd_setChar(robotLCD, ' ', 1, 9);
+	//~ }
 	return TRUE;
 }
 
@@ -205,6 +205,8 @@ gboolean waitForStart(gboolean isInitDone)
 	lcd_setText(robotLCD, "     GREEN     >", 1);
 	lcd_setBacklight(robotLCD, FALSE, TRUE, FALSE);
 
+	gboolean softStop = TRUE;
+	motion_stopMotors();
 	while(gpio_digitalRead(CAPE_DIGITAL[0]) == 0)
 	{
 		if(!isInitDone)
@@ -230,6 +232,17 @@ gboolean waitForStart(gboolean isInitDone)
 		{
 			oldSide = isRightSide;
 			isRightSide = FALSE;
+		}
+
+		if(lcd_isButtonPressed(robotLCD, LCD_BUTTON_SELECT))
+		{
+			softStop = !softStop;
+			if(softStop)
+				motion_stopMotors();
+			else
+				motion_stopMotorsHard();
+			while(lcd_isButtonPressed(robotLCD, LCD_BUTTON_SELECT))
+				g_usleep(20000);
 		}
 
 		if(oldSide != isRightSide)
@@ -261,8 +274,8 @@ int main(int argc, char **argv)
 	// Init robot hardware.
 	gboolean initDone = initRobot();
 	// Wait for match to start, redoing motor init if previously failed.
-	//~ robot_isOnRightSide = waitForStart(initDone);
-	robot_isOnRightSide = FALSE;
+	robot_isOnRightSide = waitForStart(initDone);
+	//~ robot_isOnRightSide = TRUE;
 
 	// Start match, set timer to 100s.
 	timerMain = g_timer_new();
@@ -277,8 +290,9 @@ int main(int argc, char **argv)
 
 	// Turn screen backlight to white, display on second line IR sensor status.
 	lcd_setBacklight(robotLCD, TRUE, TRUE, TRUE);
+	lcd_clear(robotLCD);
 	lcd_setText(robotLCD, "Score:          ", 0);
-	lcd_setText(robotLCD, "IR F:  B: ", 1);
+	//~ lcd_setText(robotLCD, "IR F:  B: ", 1);
 
 	// Launch the strategy thread
 	g_thread_new("Strategy", strategy_runMatch, NULL);

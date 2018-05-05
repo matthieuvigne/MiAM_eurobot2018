@@ -35,7 +35,7 @@ void *localisation_start()
 	g_free(line);
 
 	g_io_channel_write_chars(logFile, "time,commandVelocityR,commandVelocityL,encoderR,encoderL,gyroX,gyroY,gyroZ,"
-									  "accelX,accelY,accelZ,mouseX,mouseY,currentX,currentY,currentTheta\n", -1, NULL, NULL);
+									  "mouseX,mouseY,currentX,currentY,currentTheta\n", -1, NULL, NULL);
 	g_io_channel_flush (logFile, NULL);
 
 	// Create kalman filter.
@@ -75,15 +75,15 @@ void *localisation_start()
 			encoder[i]= L6470_getPosition(robotMotors[i]);
 			motorIncrementSI[i] = (encoder[i] - oldEncoder[i]) * STEP_TO_SI;
 			oldEncoder[i] = encoder[i];
-			motorSpeed[i]= L6470_getSpeed(robotMotors[i]);
+			//~ motorSpeed[i]= L6470_getSpeed(robotMotors[i]);
 		}
 
-		double gyroX, gyroY, gyroZ, accelX, accelY, accelZ;
+		double gyroX, gyroY, gyroZ;
 		imu_gyroGetValues(robotIMU, &gyroX, &gyroY, &gyroZ);
-		imu_accelGetValues(robotIMU, &accelX, &accelY, &accelZ);
+		//~ imu_accelGetValues(robotIMU, &accelX, &accelY, &accelZ);
 		gyroZ -= GYRO_Z_BIAS;
 		double mouseX, mouseY;
-		ADNS9800_getMotion(robotMouseSensor, &mouseX, &mouseY);
+		//~ ADNS9800_getMotion(robotMouseSensor, &mouseX, &mouseY);
 
 		currentTime = g_timer_elapsed(localisationTimer, NULL);
 		double dt = currentTime - lastTime;
@@ -110,12 +110,11 @@ void *localisation_start()
 		robot_setPosition(currentPosition);
 
 		// Log data
-		gchar *line = g_strdup_printf("%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+		gchar *line = g_strdup_printf("%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f\n",
 		                             currentTime,
 		                             motorSpeed[RIGHT], motorSpeed[LEFT],
 		                             encoder[RIGHT],  encoder[LEFT],
 		                             gyroX, gyroY, gyroZ,
-		                             accelX, accelY, accelZ,
 		                             mouseX, mouseY,
 		                             currentPosition.x, currentPosition.y, currentPosition.theta);
 
