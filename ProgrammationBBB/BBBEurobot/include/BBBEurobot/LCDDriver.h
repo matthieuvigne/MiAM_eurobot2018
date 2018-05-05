@@ -8,8 +8,12 @@
 	#include <glib.h>
 	#include "BBBEurobot/MPC23017Driver.h"
 
-	///< LCD structure: actually only an MPC structure because communication is only done with that chip.
-	typedef MPC LCD;
+	///< LCD structure MPC + mutex.
+	typedef struct
+	{
+		MPC mpc;
+		GMutex mutex;
+	}LCD;
 
 	///< Mapping of board buttons.
 	typedef enum

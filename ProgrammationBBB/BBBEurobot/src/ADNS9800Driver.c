@@ -244,6 +244,7 @@ gboolean ANDS9800_init(ADNS9800 *a, const gchar *portName)
 	// change the reserved bytes (like by writing 0x00...) it would not work.
 	unsigned char laser_ctrl0 = ADNS9800_read_register(*a, REG_LASER_CTRL0);
 	ADNS9800_write_register(*a, REG_LASER_CTRL0, laser_ctrl0 & 0xf0 );
+	ADNS9800_write_register(*a, 0x2E, 0b00011111 );
 
 	// Compute sensor resolution: 200dpi * REG_Configuration_I.
 	a->resolution = 25.4 / (200.0 * (ADNS9800_read_register(*a, REG_Configuration_I) & 0b00111111));

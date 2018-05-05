@@ -49,16 +49,16 @@ int data_pins[4] = {12, 11, 10, 9};
 
 void lcd_pulseEnable(LCD lcd)
 {
-	mpc_digitalWrite(lcd, enable_pin, 1);
+	mpc_digitalWrite(lcd.mpc, enable_pin, 1);
 	g_usleep(1);    // enable pulse must be >450ns
-	mpc_digitalWrite(lcd, enable_pin, 0);
+	mpc_digitalWrite(lcd.mpc, enable_pin, 0);
 	g_usleep(40);   // commands need > 37us to settle
 }
 
 // Send data over 4bits interface, with specific rs pin value.
 void lcd_sendData(LCD lcd, guint8 data, guint8 rsValue)
 {
-	guint16 portValue = mpc_readAll(lcd);
+	guint16 portValue = mpc_readAll(lcd.mpc);
 
 	// Set RS, RW and enable to 0
 	portValue &= ~(1 << rs_pin);
@@ -74,7 +74,7 @@ void lcd_sendData(LCD lcd, guint8 data, guint8 rsValue)
 		portValue &= ~(1 << data_pins[x]);
 		portValue |= (((data >> (4 + x)) & 0x01) << data_pins[x]);
 	}
-	mpc_writeAll(lcd, portValue);
+	mpc_writeAll(lcd.mpc, portValue);
 	lcd_pulseEnable(lcd);
 
 	// Second 4 bits.
@@ -83,7 +83,7 @@ void lcd_sendData(LCD lcd, guint8 data, guint8 rsValue)
 		portValue &= ~(1 << data_pins[x]);
 		portValue |= (((data >> (x)) & 0x01) << data_pins[x]);
 	}
-	mpc_writeAll(lcd, portValue);
+	mpc_writeAll(lcd.mpc, portValue);
 	lcd_pulseEnable(lcd);
 }
 
@@ -103,24 +103,24 @@ void lcd_sendChar(LCD lcd, unsigned char value)
 gboolean lcd_init(LCD *lcd, I2CAdapter *adapter, int address)
 {
 	// Init MPC chip.
-	if(mpc_init(lcd, adapter, address) == FALSE)
+	if(mpc_init(&(lcd->mpc), adapter, address) == FALSE)
 		return FALSE;
 	// Configure MPC I/O.
-    mpc_pinMode(*lcd, 8, MPC_OUTPUT);
-    mpc_pinMode(*lcd, 7, MPC_OUTPUT);
-    mpc_pinMode(*lcd, 6, MPC_OUTPUT);
+    mpc_pinMode(lcd->mpc, 8, MPC_OUTPUT);
+    mpc_pinMode(lcd->mpc, 7, MPC_OUTPUT);
+    mpc_pinMode(lcd->mpc, 6, MPC_OUTPUT);
 
-    mpc_pinMode(*lcd, rs_pin, MPC_OUTPUT);
-    mpc_pinMode(*lcd, rw_pin, MPC_OUTPUT);
-    mpc_pinMode(*lcd, enable_pin, MPC_OUTPUT);
+    mpc_pinMode(lcd->mpc, rs_pin, MPC_OUTPUT);
+    mpc_pinMode(lcd->mpc, rw_pin, MPC_OUTPUT);
+    mpc_pinMode(lcd->mpc, enable_pin, MPC_OUTPUT);
 
 	for(int x=0; x < 4; x++)
-		mpc_pinMode(*lcd, data_pins[x], MPC_OUTPUT);
+		mpc_pinMode(lcd->mpc, data_pins[x], MPC_OUTPUT);
 
 	// Turn off all legs, set all the other lines to low.
 	guint16 pinValue = 0;
 	pinValue = pinValue | (0b111 << 6);
-	mpc_writeAll(*lcd, pinValue);
+	mpc_writeAll(lcd->mpc, pinValue);
 
 	// Reset LCD into 4 bit mode : see HD44780 datasheet, figure 24 pg. 46.
 	lcd_sendCommand(*lcd, 0x33);
@@ -145,6 +145,7 @@ void lcd_clear(LCD lcd)
 
 void lcd_setText(LCD lcd, gchar *text, int line)
 {
+	g_mutex_lock(&lcd.mutex);
 	// If line is not zero, set offset to write to line 1.
 	if(line != 0)
 		line  = 0x40;
@@ -163,10 +164,13 @@ void lcd_setText(LCD lcd, gchar *text, int line)
 	// Pad string with spaces if needed.
 	for(int x = stringLength; x < 16; x++)
 		lcd_sendChar(lcd, ' ');
+	g_mutex_unlock(&lcd.mutex);
 }
 
 void lcd_setChar(LCD lcd, gchar text, int line, int column)
 {
+	g_mutex_lock(&lcd.mutex);
+	g_usleep(200);
 	int offset = 0;
 	// If line is not zero, set offset to write to line 1.
 	if(line != 0)
@@ -179,6 +183,7 @@ void lcd_setChar(LCD lcd, gchar text, int line, int column)
 	// Go to beginning of line.
 	lcd_sendCommand(lcd, LCD_SETDDRAMADDR | offset);
 	lcd_sendChar(lcd, text);
+	g_mutex_unlock(&lcd.mutex);
 }
 
 
@@ -204,14 +209,14 @@ void lcd_setTextCentered(LCD lcd, gchar *text, int line)
 
 void lcd_setBacklight(LCD lcd, gboolean red, gboolean green, gboolean blue)
 {
-	mpc_digitalWrite(lcd, 6, ~(red) & 0x1);
-	mpc_digitalWrite(lcd, 7, ~(green) & 0x1);
-	mpc_digitalWrite(lcd, 8, ~(blue) & 0x1);
+	mpc_digitalWrite(lcd.mpc, 6, ~(red) & 0x1);
+	mpc_digitalWrite(lcd.mpc, 7, ~(green) & 0x1);
+	mpc_digitalWrite(lcd.mpc, 8, ~(blue) & 0x1);
 }
 
 gboolean lcd_isButtonPressed(LCD lcd, LCDButton button)
 {
-	if(mpc_digitalRead(lcd, button) == 0)
+	if(mpc_digitalRead(lcd.mpc, button) == 0)
 		return TRUE;
 	return FALSE;
 }
