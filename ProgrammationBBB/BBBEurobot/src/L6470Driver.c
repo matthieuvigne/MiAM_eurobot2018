@@ -114,6 +114,10 @@ void L6470_initMotion(L6470 l, int maxSpeed, int maxAcceleration)
                   | dSPIN_CONFIG_SR_290V_us       | dSPIN_CONFIG_OC_SD_DISABLE
                   | dSPIN_CONFIG_VS_COMP_DISABLE| dSPIN_CONFIG_SW_USER
                   | dSPIN_CONFIG_INT_16MHZ);
+    // Set stall thershold at 2.8A.
+    setParam(l, dSPIN_STALL_TH, 90);
+    // Set overcurrent detection at 3.4A
+    setParam(l, dSPIN_OCD_TH, dSPIN_OCD_TH_3375mA);
 }
 
 
