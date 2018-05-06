@@ -198,8 +198,8 @@ gboolean motion_initMotors()
 		printf("Failed to init left robotMotors\n");
 		result =  FALSE;
 	}
-
-	motion_stopMotors();
+	motion_resetVelocityProfile();
+	motion_releaseMotors();
 	return result;
 }
 
@@ -208,10 +208,14 @@ void motion_stopMotors()
 {
     L6470_softStop(robotMotors[RIGHT]);
     L6470_softStop(robotMotors[LEFT]);
+
+}
+
+void motion_releaseMotors()
+{
 	L6470_highZ(robotMotors[RIGHT]);
 	L6470_highZ(robotMotors[LEFT]);
 }
-
 
 void motion_stopMotorsHard()
 {
@@ -220,16 +224,16 @@ void motion_stopMotorsHard()
 }
 
 
-void motion_setVelocityProfile(int maxSpeed, int maxAccel)
+void motion_setVelocityProfile(int maxSpeed, int maxAccel, int maxDecel)
 {
 	motion_stopMotorsHard();
-	L6470_setVelocityProfile(robotMotors[RIGHT], maxSpeed, maxAccel, maxAccel);
-	L6470_setVelocityProfile(robotMotors[LEFT], maxSpeed, maxAccel, maxAccel);
+	L6470_setVelocityProfile(robotMotors[RIGHT], maxSpeed, maxAccel, maxDecel);
+	L6470_setVelocityProfile(robotMotors[LEFT], maxSpeed, maxAccel, maxDecel);
 }
 
 void motion_resetVelocityProfile()
 {
-	motion_setVelocityProfile(MOTOR_MAX_SPEED, MOTOR_MAX_ACCELERATION);
+	motion_setVelocityProfile(MOTOR_MAX_SPEED, MOTOR_MAX_ACCELERATION, 1.5 * MOTOR_MAX_ACCELERATION);
 }
 
 gboolean motion_translate(double distance, gboolean readSensor)
@@ -265,14 +269,11 @@ gboolean motion_translate(double distance, gboolean readSensor)
 			// An obstacle has been seen: stop the motors, wait 5 sec
 			//~ L6470_hardStop(robotMotors[RIGHT]);
 			//~ L6470_hardStop(robotMotors[LEFT]);
-			motion_stopMotorsHard();
+			motion_stopMotors();
 			g_usleep(3000000);
 			// If there is still an obstacle, abort.
 			if(checkSensor(distance < 0))
-			{
-				motion_stopMotorsHard();
 				return FALSE;
-			}
 			else
 			{
 				// Try to complete motion.
@@ -281,7 +282,7 @@ gboolean motion_translate(double distance, gboolean readSensor)
 			}
 		}
 	}
-	motion_stopMotorsHard();
+	motion_stopMotors();
 	return TRUE;
 }
 
@@ -310,7 +311,7 @@ gboolean motion_shake(double distance)
 		L6470_getError(robotMotors[RIGHT]);
 		L6470_getError(robotMotors[LEFT]);
 	}
-	motion_stopMotorsHard();
+	motion_stopMotors();
 	return TRUE;
 }
 

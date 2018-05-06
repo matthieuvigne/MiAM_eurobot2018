@@ -205,8 +205,8 @@ gboolean waitForStart(gboolean isInitDone)
 	lcd_setText(robotLCD, "     GREEN     >", 1);
 	lcd_setBacklight(robotLCD, FALSE, TRUE, FALSE);
 
-	gboolean softStop = TRUE;
-	motion_stopMotors();
+	gboolean motorReleased = TRUE;
+	motion_releaseMotors();
 	while(gpio_digitalRead(CAPE_DIGITAL[0]) == 0)
 	{
 		if(!isInitDone)
@@ -236,11 +236,11 @@ gboolean waitForStart(gboolean isInitDone)
 
 		if(lcd_isButtonPressed(robotLCD, LCD_BUTTON_SELECT))
 		{
-			softStop = !softStop;
-			if(softStop)
-				motion_stopMotors();
+			motorReleased = !motorReleased;
+			if(motorReleased)
+				motion_releaseMotors();
 			else
-				motion_stopMotorsHard();
+				motion_stopMotors();
 			while(lcd_isButtonPressed(robotLCD, LCD_BUTTON_SELECT))
 				g_usleep(20000);
 		}

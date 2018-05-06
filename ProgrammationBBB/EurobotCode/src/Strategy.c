@@ -15,7 +15,7 @@ void killStrategy()
 		g_usleep(50);
 	}
 	motion_stopMotorsHard();
-	motion_stopMotors();
+	motion_releaseMotors();
 	exit(0);
 }
 
@@ -43,7 +43,7 @@ void throwBalls()
 void gatherWater(gboolean sameColor)
 {
 	//~ motion_translate(3, FALSE);
-	motion_setVelocityProfile(1000, 600);
+	motion_setVelocityProfile(1000, 600, 600);
 	if(sameColor)
 		servo_ballDirectionCanon();
 	else

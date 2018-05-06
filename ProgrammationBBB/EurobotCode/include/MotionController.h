@@ -15,12 +15,15 @@
 	///			and should be retested.
 	gboolean motion_initMotors();
 
-	/// \brief Stop both motors, and set them to high impedence.
+	/// \brief Stop both motors, following deceleration curve.
 	///
 	/// \details This function should be called before code terminates.
 	void motion_stopMotors();
 
-	/// \brief Performs a hard motor stop, without setting them to high impedence.
+	/// \brief Sets the motor driver to high impedence, i.e. release any motor holding torque.
+	void motion_releaseMotors();
+
+	/// \brief Performs a hard motor stop, i.e. stop them instantly.
 	void motion_stopMotorsHard();
 
 	/// \brief Moves the robot a specified distance.
@@ -34,10 +37,19 @@
 	/// \returns TRUE if target position has been reached, FALSE if an obstacle has stopped it before.
 	gboolean motion_translate(double distance, gboolean readSensor);
 
+	/// \brief Shake the robot, by doing small translations of opposite sign on the motors.
+	///
+	/// \param[in] distance Distance in mm to move (negative to move backward).
 	gboolean motion_shake(double distance);
 
-	void motion_setVelocityProfile(int maxSpeed, int maxAccel);
+	/// \brief Set the velocity profile of the robot.
+	///
+	/// \param[in] maxSpeed Maximum speed, in steps/s.
+	/// \param[in] maxAccel Maximum acceleration, in steps/s{-2}.
+	/// \param[in] maxDecel Maximum deceleration, in steps/s{-2}.
+	void motion_setVelocityProfile(int maxSpeed, int maxAccel, int maxDecel);
 
+	/// \brief Reset the velocity profile to its default value.
 	void motion_resetVelocityProfile();
 
 	/// \brief Rotate the robot of a relative angle.
