@@ -299,7 +299,7 @@ int main(int argc, char **argv)
 	g_thread_new("Localisation", localisation_start, NULL);
 
 	// Timeout functions to check on the infrared sensors.
-	g_timeout_add(20, checkInfrarouge, NULL);
+	g_timeout_add(15, checkInfrarouge, NULL);
 	// Run glib main loop.
     g_main_loop_run(loop);
 	return 0;

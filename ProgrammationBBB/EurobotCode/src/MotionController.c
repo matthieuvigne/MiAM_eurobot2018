@@ -266,11 +266,22 @@ gboolean motion_translate(double distance, gboolean readSensor)
 
 		if(readSensor && checkSensor(distance < 0))
 		{
-			// An obstacle has been seen: stop the motors, wait 5 sec
-			//~ L6470_hardStop(robotMotors[RIGHT]);
-			//~ L6470_hardStop(robotMotors[LEFT]);
+			// An obstacle has been seen: stop the motors (in semi-hard fashion: leave 0.5s for deceleration then stop).
 			motion_stopMotors();
-			g_usleep(3000000);
+			g_usleep(500000);
+			motion_stopMotorsHard();
+			// Wait at most 3.5s for the robot to go away.
+			GTimer *waitTimer = g_timer_new();
+			g_timer_start(waitTimer);
+			int nNoRobotSeen = 2;
+			while(g_timer_elapsed(waitTimer, NULL) < 3.5 && nNoRobotSeen > 0)
+			{
+				if(checkSensor(distance < 0))
+					nNoRobotSeen = 2;
+				else
+					nNoRobotSeen--;
+				g_usleep(30000);
+			}
 			// If there is still an obstacle, abort.
 			if(checkSensor(distance < 0))
 				return FALSE;
