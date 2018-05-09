@@ -78,6 +78,7 @@
 
 	///< TRUE if we are playing on the right side of the field, false otherwise.
 	gboolean robot_isOnRightSide;
+	extern gboolean robot_disableIRWater;
 
 
 	///< Servo actions. Note that these functions do not wait for the servo action to be done.
@@ -175,7 +176,7 @@
 
 	static inline void servo_beeLaunch()
 	{
-		maestro_setPosition(robotServo, 14, 2450);
+		maestro_setPosition(robotServo, 14, 2480);
 	}
 
 	static inline void servo_clawUp()
@@ -188,6 +189,11 @@
 	{
 		maestro_setPosition(robotServo, 3, 1870);
 		maestro_setPosition(robotServo, 4, 1130);
+	}
+
+	static inline void servo_clawDropCube()
+	{
+		maestro_setPosition(robotServo, 3, 2480);
 	}
 
 	static inline void servo_clawDown()
@@ -218,8 +224,10 @@
 		// Bee servo speed
 		maestro_setSpeed(robotServo, 14, 700);
 		servo_beeRetract();
-		maestro_setSpeed(robotServo, 3, 1200);
-		maestro_setSpeed(robotServo, 4, 1200);
+		maestro_setSpeed(robotServo, 3, 800);
+		maestro_setSpeed(robotServo, 4, 800);
 		servo_clawUp();
+		servo_middleWaterTank();
+		//~ servo_openClaws();
 	}
  #endif

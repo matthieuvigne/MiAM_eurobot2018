@@ -19,10 +19,10 @@
 
 
 // Sensor value threshold to consider a valid detection.
-const int IR_FRONT_THRESHOLD = 800;
-const int IR_BACK_THRESHOLD = 1000;
+const int IR_FRONT_THRESHOLD = 700;
+const int IR_BACK_THRESHOLD = 700;
 
-
+gboolean robot_disableIRWater = FALSE;
 /// \brief Check the infrared sensors for an obstacle
 /// \details This function is called by the main loop in a timeout.
 /// \return TRUE, to continue the timeout.
@@ -31,12 +31,14 @@ gboolean checkInfrarouge()
 	// The IR results are compared to a threshold, resulting in a true/false evalution.
 	// A counter then accesses that n identical boolean of the same value have been recieved: once this is the case,
 	// the value of the robot_IRDetection variable changes.
-	const int N_CONSECUTIVE = 3;
+	const int N_CONSECUTIVE = 2;
 	static int frontCounter = 1, backCounter = 1;
 	static gboolean oldSensorValueBack = FALSE, oldSensorValueFront = FALSE;
 
-	gboolean sensorValue = (gpio_analogRead(CAPE_ANALOG[3]) > IR_BACK_THRESHOLD) ||
-	                      (gpio_analogRead(CAPE_ANALOG[4]) > IR_BACK_THRESHOLD);
+	gboolean sensorValue = gpio_analogRead(CAPE_ANALOG[3]) > IR_BACK_THRESHOLD;
+	if(!robot_disableIRWater)
+		sensorValue |= gpio_analogRead(CAPE_ANALOG[4]) > IR_BACK_THRESHOLD;
+
 	if(sensorValue == oldSensorValueBack)
 		backCounter ++;
 	else
@@ -46,7 +48,7 @@ gboolean checkInfrarouge()
 	oldSensorValueBack = sensorValue;
 
 	sensorValue = (gpio_analogRead(CAPE_ANALOG[2]) > IR_FRONT_THRESHOLD) ||
-	              (gpio_analogRead(CAPE_ANALOG[5]) > IR_FRONT_THRESHOLD);
+	              (gpio_analogRead(CAPE_ANALOG[5]) * 1.5 > IR_FRONT_THRESHOLD);
 	if(sensorValue == oldSensorValueFront)
 		frontCounter ++;
 	else
@@ -196,6 +198,7 @@ gboolean waitForStart(gboolean isInitDone)
 
 	gboolean motorReleased = TRUE;
 	motion_releaseMotors();
+	//~ gboolean closed = FALSE;
 	while(gpio_digitalRead(CAPE_DIGITAL[0]) == 0)
 	{
 		if(!isInitDone)
@@ -216,6 +219,12 @@ gboolean waitForStart(gboolean isInitDone)
 			oldSide = isRightSide;
 			isRightSide = TRUE;
 		}
+
+		//~ if(!closed && lcd_isButtonPressed(robotLCD, LCD_BUTTON_UP))
+		//~ {
+			//~ servo_closeClaws();
+			//~ closed = TRUE;
+		//~ }
 
 		if(lcd_isButtonPressed(robotLCD, LCD_BUTTON_LEFT))
 		{
@@ -263,8 +272,9 @@ int main(int argc, char **argv)
 	// Init robot hardware.
 	gboolean initDone = initRobot();
 	// Wait for match to start, redoing motor init if previously failed.
-	//~ robot_isOnRightSide = waitForStart(initDone);
-	robot_isOnRightSide = TRUE;
+	robot_isOnRightSide = waitForStart(initDone);
+	//~ robot_isOnRightSide = TRUE;
+	//~ servo_closeClaws();
 
 	// Start match, set timer to 100s.
 	timerMain = g_timer_new();

@@ -42,17 +42,19 @@ void throwBalls()
 // It returns when no balls have been detected for 0.5s, or if the time elapsed is greater than 5s.
 void gatherWater(gboolean sameColor)
 {
-	//~ motion_translate(3, FALSE);
-	motion_setVelocityProfile(1000, 600, 600);
+	motion_setVelocityProfile(1000, 700, 1100);
 	if(sameColor)
 		servo_ballDirectionCanon();
 	else
 		servo_ballDirectionCenter();
 
-	servo_openWaterTank();
+
+	servo_closeWaterTank();
+	g_usleep(250000);
+	motion_translate(-15, FALSE);
 	g_usleep(500000);
-	motion_shake(25);
-	motion_shake(-25);
+	//~ motion_shake(25);
+	//~ motion_shake(-25);
 	motion_translate(20, FALSE);
 	motion_translate(-20, FALSE);
 	motion_resetVelocityProfile();
@@ -70,7 +72,6 @@ void robot_setScore(int score)
 void *strategy_runMatch()
 {
 	printf("Strategy started\n");
-	while(TRUE);;
 	// Grab SIGINT (Ctrl + C) and SIGTERM signal in order to stop the motors when this thread is stopped.
 	signal(SIGINT, killStrategy);
 	signal(SIGTERM, killStrategy);
@@ -82,6 +83,11 @@ void *strategy_runMatch()
 	int robotScore = 10;
 	robot_setScore(robotScore);
 	servo_middleWaterTank();
+
+	//~ servo_openClaws();
+	//~ g_usleep(2000000);
+	//~ servo_closeClaws();
+	//~ while(TRUE);
 
 	// Go turn on light swith.
 	targetPosition.x = 1130 + 30;
@@ -97,10 +103,10 @@ void *strategy_runMatch()
 	motion_translate(-(250 - CHASSIS_FRONT), TRUE);
 
 	servo_clawLightSwitch();
-	g_usleep(800000);
+	g_usleep(1000000);
 	motion_translate(10, TRUE);
 	servo_clawDown();
-	g_usleep(100000);
+	g_usleep(200000);
 	robotScore +=25;
 	robot_setScore(robotScore);
 	motion_translate(-20, TRUE);
@@ -113,17 +119,20 @@ void *strategy_runMatch()
 	resetPosition.theta = G_PI_2;
 	localisation_reset(resetPosition, FALSE, TRUE, TRUE);
 
-	motion_translate(-700, TRUE);
+	// Go launch bee
+	gboolean motionSucessful = motion_translate(-470, TRUE);
 
 	// Go launch the bee
 	targetPosition.x = CHASSIS_SIDE + 80 ;
-	targetPosition.y = 2000 - (CHASSIS_FRONT + 80);
-	motion_goTo(targetPosition, FALSE, TRUE);
+	targetPosition.y = 2000 - (CHASSIS_FRONT + 80) - 130;
+	if(motionSucessful)
+		motionSucessful = motion_goTo(targetPosition, FALSE, TRUE);
 
 	// Recalibrate
 	targetPosition.x = CHASSIS_FRONT - 30;
 	targetPosition.y = robot_getPositionY();
-	motion_goTo(targetPosition, FALSE, TRUE);
+	if(motionSucessful)
+		motionSucessful = motion_goTo(targetPosition, FALSE, TRUE);
 
 	resetPosition.x = CHASSIS_FRONT;
 	resetPosition.theta = G_PI;
@@ -134,96 +143,128 @@ void *strategy_runMatch()
 	else
 		targetPosition.x = CHASSIS_FRONT + 90;
 	targetPosition.y = robot_getPositionY();
-	motion_goTo(targetPosition, TRUE, TRUE);
-	if(!robot_isOnRightSide)
-		servo_beeLaunch();
-	targetPosition.y = 2000 - CHASSIS_FRONT + 10;
-	motion_goTo(targetPosition, FALSE, TRUE);
-
-	resetPosition.y = 2000 - CHASSIS_FRONT;
-	resetPosition.theta = -G_PI_2;
-	localisation_reset(resetPosition, FALSE, TRUE, TRUE);
-
-	// Launch bee
-	if(!robot_isOnRightSide)
+	if(motionSucessful)
+		motionSucessful = motion_goTo(targetPosition, TRUE, TRUE);
+	if(motionSucessful)
 	{
-		motion_translate(-10, TRUE);
-		maestro_setSpeed(robotServo, 14, 1100);
+		if(!robot_isOnRightSide)
+			servo_beeLaunch();
+		targetPosition.y = 2000 - CHASSIS_FRONT + 10;
+		motion_goTo(targetPosition, FALSE, TRUE);
+
+		resetPosition.y = 2000 - CHASSIS_FRONT;
+		resetPosition.theta = -G_PI_2;
+		localisation_reset(resetPosition, FALSE, TRUE, TRUE);
+
+		// Launch bee
+		if(!robot_isOnRightSide)
+		{
+			motion_translate(-10, TRUE);
+			maestro_setSpeed(robotServo, 14, 1100);
+			servo_beeRetract();
+		}
+		else
+		{
+			servo_beeLaunch();
+			g_usleep(800000);
+			motion_translate(-10, TRUE);
+			g_usleep(300000);
+		}
+		g_usleep(500000);
 		servo_beeRetract();
-	}
-	else
-	{
-		servo_beeLaunch();
-		g_usleep(800000);
-		motion_translate(-10, TRUE);
-	}
-	g_usleep(500000);
-	servo_beeRetract();
-	robotScore += 50;
-	robot_setScore(robotScore);
+		robotScore += 50;
+		robot_setScore(robotScore);
 
-	motion_translate(-70, TRUE);
+		motion_translate(-70, TRUE);
+	}
+
+	motionSucessful = TRUE;
 
 	// Go grab the balls, ignore the cubes.
 	targetPosition.x = 930;
-	targetPosition.y = 840 + BALL_WIDTH_OFFSET - 20;
-	motion_goTo(targetPosition, FALSE, TRUE);
-	servo_closeWaterTank();
+	targetPosition.y = 840 + BALL_WIDTH_OFFSET - 30;
+	motionSucessful = motion_goTo(targetPosition, FALSE, TRUE);
 	// Go further than what is supposed to, stop at contact
-	targetPosition.x = BALL_LENGTH_OFFSET + 100 - 25;
-	stopOnSwitch = TRUE;
-	motion_goTo(targetPosition, TRUE, FALSE);
-	stopOnSwitch = FALSE;
-	motion_translate(15, FALSE);
+	if(motionSucessful)
+	{
+		servo_openWaterTank();
+		robot_disableIRWater = TRUE;
+		targetPosition.x = BALL_LENGTH_OFFSET + 100 - 15;
+		stopOnSwitch = TRUE;
+		motionSucessful = motion_goTo(targetPosition, TRUE, TRUE);
+		stopOnSwitch = FALSE;
+		robot_disableIRWater = FALSE;
 
-	gatherWater(TRUE);
-	robotScore += 10;
-	robot_setScore(robotScore);
-
-	motion_translate(60, TRUE);
-	if(robot_isOnRightSide)
-		motion_rotate(G_PI_2);
-	else
-		motion_rotate(G_PI_2 + 0.2);
+		if(motionSucessful)
+		{
+			motion_translate(20, FALSE);
+			gatherWater(TRUE);
+			robotScore += 10;
+			robot_setScore(robotScore);
+			motion_translate(60, TRUE);
+			if(robot_isOnRightSide)
+				motion_rotate(G_PI_2);
+			else
+				motion_rotate(G_PI_2 + 0.2);
+			throwBalls();
+			// Number of points scored by throwing the balls: 5points / ball.
+			robotScore += 5;
+			robot_setScore(robotScore);
+		}
+	}
 	servo_middleWaterTank();
-	throwBalls();
-	// Number of points scored by throwing the balls: 5points / ball.
-	robotScore += 10;
-	robot_setScore(robotScore);
 
+	motionSucessful = TRUE;
 	// Go push the cubes
 	targetPosition.x = 850;
 	motion_goTo(targetPosition, FALSE, TRUE);
 	targetPosition.x = 810;
 	targetPosition.y = CHASSIS_FRONT + 180 - 20;
-	motion_goTo(targetPosition, FALSE, TRUE);
-	servo_clawLightSwitch();
-
-	robotScore += 5;
-	robot_setScore(robotScore);
-
+	motion_setVelocityProfile(700, 300, 800);
+	motionSucessful = motion_goTo(targetPosition, FALSE, TRUE);
+	motion_resetVelocityProfile();
+	if(motionSucessful)
+	{
+		servo_clawLightSwitch();
+		g_usleep(1000000);
+		servo_clawDropCube();;
+		g_usleep(1000000);
+		robotScore += 7;
+		robot_setScore(robotScore);
+	}
+	motionSucessful = TRUE;
 	// Go push the second block of cubes.
-	motion_translate(-100, TRUE);
+	motionSucessful = motion_translate(-100, TRUE);
 	servo_clawUp();
 	targetPosition.x -= 100;
 	targetPosition.y = 1500;
-	motion_goTo(targetPosition, TRUE, TRUE);
+	if(motionSucessful)
+		motionSucessful = motion_goTo(targetPosition, TRUE, TRUE);
 
 	targetPosition.x= CHASSIS_FRONT - 20;
-	motion_goTo(targetPosition, FALSE, TRUE);
+	if(motionSucessful)
+		motionSucessful = motion_goTo(targetPosition, FALSE, TRUE);
 
 	resetPosition.x = CHASSIS_FRONT;
 	resetPosition.theta = G_PI;
 	localisation_reset(resetPosition, TRUE, FALSE, TRUE);
+	if(motionSucessful)
+		motionSucessful = motion_translate(-80, TRUE);
 
-	motion_translate(-60, TRUE);
+	targetPosition.x = 570;
+	targetPosition.y = CHASSIS_FRONT + 180 - 30;
+	if(motionSucessful)
+	{
+		motion_setVelocityProfile(700, 300, 800);
+		motionSucessful = motion_goTo(targetPosition, FALSE, TRUE);
+		motion_resetVelocityProfile();
+	}
 
-	targetPosition.x = 600;
-	targetPosition.y = CHASSIS_FRONT + 180 - 15;
-	motion_goTo(targetPosition, FALSE, TRUE);
-
-	robotScore += 5;
-	robot_setScore(robotScore);
+	if(motionSucessful)
+	{
+		robotScore += 5;
+		robot_setScore(robotScore);
+	}
 	printf("Strategy ended\n");
 	return 0;
 }

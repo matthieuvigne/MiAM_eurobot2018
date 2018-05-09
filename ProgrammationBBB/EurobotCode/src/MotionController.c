@@ -6,8 +6,8 @@ const int MOTOR_MAX_SPEED = 700;
 const int MOTOR_MAX_ACCELERATION = 500;
 
 // Motor current profile constants, for the 42BYGHW810 robotMotors, 2.0A - these values are computed using ST dSPIN utility.
-const int MOTOR_KVAL_HOLD = 0x2D;
-const int MOTOR_BEMF[4] = {0x30, 0x172E, 0xE, 0x39};
+const int MOTOR_KVAL_HOLD = 0x29;
+const int MOTOR_BEMF[4] = {0x3E, 0x172D, 0xD, 0x39};
 
 
 // Generic implementation of a PID controller.
@@ -171,6 +171,8 @@ gboolean checkSensor(gboolean backward)
 	// Ignore bottom ball catcher.
 	if((robotViewpoint.x < 900 && robotViewpoint.x > 400) && robotViewpoint.y > 1720)
 		return FALSE;
+	if(robotViewpoint.x < 500 && (robotViewpoint.y > 500 && robotViewpoint.y < 1000))
+		return FALSE;
 
 	if(backward)
 		return robot_IRDetectionBack;
@@ -233,7 +235,7 @@ void motion_setVelocityProfile(int maxSpeed, int maxAccel, int maxDecel)
 
 void motion_resetVelocityProfile()
 {
-	motion_setVelocityProfile(MOTOR_MAX_SPEED, MOTOR_MAX_ACCELERATION, 1.5 * MOTOR_MAX_ACCELERATION);
+	motion_setVelocityProfile(MOTOR_MAX_SPEED, MOTOR_MAX_ACCELERATION, 1.9 * MOTOR_MAX_ACCELERATION);
 }
 
 gboolean motion_translate(double distance, gboolean readSensor)
@@ -267,35 +269,41 @@ gboolean motion_translate(double distance, gboolean readSensor)
 		if(readSensor && checkSensor(distance < 0))
 		{
 			// An obstacle has been seen: stop the motors (in semi-hard fashion: leave 0.5s for deceleration then stop).
+			printf("Obstacle seen, stopping\n");
 			motion_stopMotors();
-			g_usleep(500000);
+			g_usleep(250000);
 			motion_stopMotorsHard();
-			g_usleep(100000);
-			motion_translate(-30, FALSE);
 			// Wait at most 3.5s for the robot to go away.
-			GTimer *waitTimer = g_timer_new();
-			g_timer_start(waitTimer);
-			int nNoRobotSeen = 2;
-			while(g_timer_elapsed(waitTimer, NULL) < 3.5 && nNoRobotSeen > 0)
-			{
-				if(checkSensor(distance < 0))
-					nNoRobotSeen = 2;
-				else
-					nNoRobotSeen--;
-				g_usleep(60000);
-			}
+			g_usleep(4000000);
+
+			//~ GTimer *waitTimer = g_timer_new();
+			//~ g_timer_start(waitTimer);
+			//~ int nNoRobotSeen = 2;
+			//~ while(g_timer_elapsed(waitTimer, NULL) < 3.5 && nNoRobotSeen > 0)
+			//~ {
+				//~ if(checkSensor(distance < 0))
+					//~ nNoRobotSeen = 2;
+				//~ else
+					//~ nNoRobotSeen--;
+				//~ g_usleep(100000);
+			//~ }
 			// If there is still an obstacle, abort.
 			if(checkSensor(distance < 0))
+			{
+				printf("Obstacle seen, abort\n");
+				motion_translate(-50, FALSE);
 				return FALSE;
+			}
 			else
 			{
+				printf("Obstacle gone, redoing motion\n");
 				// Try to complete motion.
 				L6470_goToPosition(robotMotors[RIGHT], distancestep -  L6470_getPosition(robotMotors[RIGHT]) + startEncoder[RIGHT]);
 				L6470_goToPosition(robotMotors[LEFT], distancestep -  L6470_getPosition(robotMotors[LEFT]) + startEncoder[LEFT]);
 			}
 		}
 	}
-	motion_stopMotors();
+	motion_stopMotorsHard();
 	return TRUE;
 }
 
