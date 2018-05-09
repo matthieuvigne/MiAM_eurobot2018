@@ -264,15 +264,18 @@ uint32_t L6470_getError(L6470 l)
 
     if((status & dSPIN_STATUS_STEP_LOSS_A) == 0)
 	{
-		error |= dSPIN_ERR_STALLA;
-		g_string_append(errorMessage, "Stall A ");
+		//~ error |= dSPIN_ERR_STALLA;
+		// Stall is non-verbose as too frequent.
+		//~ g_string_append(errorMessage, "Stall A ");
 	}
 
     if((status & dSPIN_STATUS_STEP_LOSS_B) == 0)
     {
-		error |= dSPIN_ERR_STALLB;
-		g_string_append(errorMessage, "Stall B ");
+		// Stall is non-verbose as too frequent.
+		//~ error |= dSPIN_ERR_STALLB;
+		//~ g_string_append(errorMessage, "Stall B ");
 	}
+
 	if(error > 0)
 		printf("L6470 error: %s\n", errorMessage->str);
 
