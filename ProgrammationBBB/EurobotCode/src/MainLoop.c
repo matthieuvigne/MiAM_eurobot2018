@@ -19,58 +19,47 @@
 
 
 // Sensor value threshold to consider a valid detection.
-int IR_FRONT_THRESHOLD = 800;
-int IR_BACK_THRESHOLD = 1000;
+const int IR_FRONT_THRESHOLD = 800;
+const int IR_BACK_THRESHOLD = 1000;
 
-// Variables to store weather or not the last timerMain we checked, we saw the opponent's robot.
-// This is used to filter lone sensor pulse due to noise.
-gboolean oldSensorValueBack = FALSE;
-gboolean oldSensorValueFront = FALSE;
-gboolean frontBuffer = FALSE;
-gboolean backBuffer = FALSE;
 
 /// \brief Check the infrared sensors for an obstacle
 /// \details This function is called by the main loop in a timeout.
 /// \return TRUE, to continue the timeout.
 gboolean checkInfrarouge()
 {
-	//~ for(int i =1; i<7; i++)
-		//~ printf("%d ", gpio_analogRead(CAPE_ANALOG[i]));
-	//~ printf("\n");
+	// The IR results are compared to a threshold, resulting in a true/false evalution.
+	// A counter then accesses that n identical boolean of the same value have been recieved: once this is the case,
+	// the value of the robot_IRDetection variable changes.
+	const int N_CONSECUTIVE = 3;
+	static int frontCounter = 1, backCounter = 1;
+	static gboolean oldSensorValueBack = FALSE, oldSensorValueFront = FALSE;
+
 	gboolean sensorValue = (gpio_analogRead(CAPE_ANALOG[3]) > IR_BACK_THRESHOLD) ||
 	                      (gpio_analogRead(CAPE_ANALOG[4]) > IR_BACK_THRESHOLD);
-	oldSensorValueBack = robot_IRDetectionBack;
-	robot_IRDetectionBack = sensorValue && backBuffer;
-	backBuffer = sensorValue;
+	if(sensorValue == oldSensorValueBack)
+		backCounter ++;
+	else
+		backCounter = 1;
+	if(backCounter >= N_CONSECUTIVE)
+		robot_IRDetectionBack = sensorValue;
+	oldSensorValueBack = sensorValue;
 
 	sensorValue = (gpio_analogRead(CAPE_ANALOG[2]) > IR_FRONT_THRESHOLD) ||
 	              (gpio_analogRead(CAPE_ANALOG[5]) > IR_FRONT_THRESHOLD);
-	oldSensorValueFront = robot_IRDetectionFront;
-	robot_IRDetectionFront = sensorValue && frontBuffer;
-	frontBuffer = sensorValue;
+	if(sensorValue == oldSensorValueFront)
+		frontCounter ++;
+	else
+		frontCounter = 1;
+	if(frontCounter >= N_CONSECUTIVE)
+		robot_IRDetectionFront = sensorValue;
+	oldSensorValueFront = sensorValue;
 
 	// Turn on red led if we see something on any sensor.
 	if(robot_IRDetectionBack || robot_IRDetectionFront)
 		gpio_digitalWrite(CAPE_LED[1], 1);
 	else
 		gpio_digitalWrite(CAPE_LED[1], 0);
-
-	// Update LCD, if needed, to say which sensors sees something.
-	//~ if(oldSensorValueFront != robot_IRDetectionFront)
-	//~ {
-		//~ if(robot_IRDetectionFront)
-			//~ lcd_setChar(robotLCD, 'Y', 1, 5);
-		//~ else
-			//~ lcd_setChar(robotLCD, ' ', 1, 5);
-	//~ }
-
-	//~ if(oldSensorValueBack != robot_IRDetectionBack)
-	//~ {
-		//~ if(robot_IRDetectionBack)
-			//~ lcd_setChar(robotLCD, 'Y', 1, 9);
-		//~ else
-			//~ lcd_setChar(robotLCD, ' ', 1, 9);
-	//~ }
 	return TRUE;
 }
 
@@ -274,8 +263,8 @@ int main(int argc, char **argv)
 	// Init robot hardware.
 	gboolean initDone = initRobot();
 	// Wait for match to start, redoing motor init if previously failed.
-	robot_isOnRightSide = waitForStart(initDone);
-	//~ robot_isOnRightSide = TRUE;
+	//~ robot_isOnRightSide = waitForStart(initDone);
+	robot_isOnRightSide = TRUE;
 
 	// Start match, set timer to 100s.
 	timerMain = g_timer_new();

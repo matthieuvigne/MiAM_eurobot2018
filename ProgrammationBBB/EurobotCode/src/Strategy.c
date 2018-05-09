@@ -70,6 +70,7 @@ void robot_setScore(int score)
 void *strategy_runMatch()
 {
 	printf("Strategy started\n");
+	while(TRUE);;
 	// Grab SIGINT (Ctrl + C) and SIGTERM signal in order to stop the motors when this thread is stopped.
 	signal(SIGINT, killStrategy);
 	signal(SIGTERM, killStrategy);

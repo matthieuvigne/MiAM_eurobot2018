@@ -270,6 +270,8 @@ gboolean motion_translate(double distance, gboolean readSensor)
 			motion_stopMotors();
 			g_usleep(500000);
 			motion_stopMotorsHard();
+			g_usleep(100000);
+			motion_translate(-30, FALSE);
 			// Wait at most 3.5s for the robot to go away.
 			GTimer *waitTimer = g_timer_new();
 			g_timer_start(waitTimer);
@@ -280,7 +282,7 @@ gboolean motion_translate(double distance, gboolean readSensor)
 					nNoRobotSeen = 2;
 				else
 					nNoRobotSeen--;
-				g_usleep(30000);
+				g_usleep(60000);
 			}
 			// If there is still an obstacle, abort.
 			if(checkSensor(distance < 0))
