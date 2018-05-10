@@ -21,15 +21,17 @@ void killStrategy()
 
 void throwBalls()
 {
-
+	servo_ballDirectionCanon();
 	servo_startCannon();
 	g_usleep(1000000);
-	for(int i=0; i < 7; i++)
+	for(int i=0; i < 8; i++)
 	{
 		servo_millTurn();
-		g_usleep(230000);
+		g_usleep(310000);
 		servo_millStop();
-		g_usleep(500000);
+		g_usleep(300000);
+		servo_millTurnBackward();
+		g_usleep(80000);
 
 		//~ servo_millTurnBackward();
 		//~ g_usleep(200000);
@@ -262,7 +264,7 @@ void *strategy_runMatch()
 
 	if(motionSucessful)
 	{
-		robotScore += 5;
+		robotScore += 4;
 		robot_setScore(robotScore);
 	}
 	printf("Strategy ended\n");

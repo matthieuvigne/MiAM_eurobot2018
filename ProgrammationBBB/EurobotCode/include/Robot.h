@@ -110,7 +110,7 @@
 
 	static inline void servo_ballDirectionCanon()
 	{
-		maestro_setPosition(robotServo, 1, 1200);
+		maestro_setPosition(robotServo, 1, 1280);
 	}
 
 	static inline void servo_trayDown()
@@ -151,7 +151,7 @@
 
 	static inline void servo_millTurnBackward()
 	{
-		maestro_setPosition(robotServo, 12, 1650);
+		maestro_setPosition(robotServo, 12, 1675);
 	}
 
 	static inline void servo_millStop()

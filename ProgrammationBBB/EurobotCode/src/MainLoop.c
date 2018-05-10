@@ -35,9 +35,9 @@ gboolean checkInfrarouge()
 	static int frontCounter = 1, backCounter = 1;
 	static gboolean oldSensorValueBack = FALSE, oldSensorValueFront = FALSE;
 
-	gboolean sensorValue = gpio_analogRead(CAPE_ANALOG[3]) > IR_BACK_THRESHOLD;
+	gboolean sensorValue = gpio_analogRead(CAPE_ANALOG[4]) > IR_BACK_THRESHOLD;
 	if(!robot_disableIRWater)
-		sensorValue |= gpio_analogRead(CAPE_ANALOG[4]) > IR_BACK_THRESHOLD;
+		sensorValue |= gpio_analogRead(CAPE_ANALOG[3]) > IR_BACK_THRESHOLD;
 
 	if(sensorValue == oldSensorValueBack)
 		backCounter ++;
@@ -138,21 +138,21 @@ gboolean initRobot()
 	}
 	isInitSuccessful &= initMouse;
 
-	gboolean initColor = colorSensor_init(&robotColorSensor, &I2C_1);
-	if(!initColor)
-	{
-		printf("Could not detect color sensor\n");
-		lcd_setText(robotLCD, "Color init failed", 0);
-		lcd_setBacklight(robotLCD, TRUE, FALSE, FALSE);
-		g_usleep(1000000);
-	}
-	else
-	{
-		// Setup sensor
-		colorSensor_setGain(robotColorSensor, TCS34725_GAIN_16X);
-		colorSensor_setIntegrationTime(robotColorSensor, 15);
-	}
-	isInitSuccessful &= initColor;
+	//~ gboolean initColor = colorSensor_init(&robotColorSensor, &I2C_1);
+	//~ if(!initColor)
+	//~ {
+		//~ printf("Could not detect color sensor\n");
+		//~ lcd_setText(robotLCD, "Color init failed", 0);
+		//~ lcd_setBacklight(robotLCD, TRUE, FALSE, FALSE);
+		//~ g_usleep(1000000);
+	//~ }
+	//~ else
+	//~ {
+		//~ // Setup sensor
+		//~ colorSensor_setGain(robotColorSensor, TCS34725_GAIN_16X);
+		//~ colorSensor_setIntegrationTime(robotColorSensor, 5);
+	//~ }
+	//~ isInitSuccessful &= initColor;
 
 	// Try motor init - we are more likely to get a failure here, so print in on the first line.
 	gboolean initMotor = motion_initMotors();
