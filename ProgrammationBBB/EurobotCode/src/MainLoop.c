@@ -19,19 +19,33 @@
 
 
 // Sensor value threshold to consider a valid detection.
-const int IR_FRONT_THRESHOLD = 700;
-const int IR_BACK_THRESHOLD = 700;
+const int IR_FRONT_THRESHOLD = 800;
+const int IR_BACK_THRESHOLD = 800;
 
 gboolean robot_disableIRWater = FALSE;
+gboolean robot_disableIR = FALSE;
+
+gboolean enableIR()
+{
+	robot_disableIR = FALSE;
+	return FALSE;
+}
+
 /// \brief Check the infrared sensors for an obstacle
 /// \details This function is called by the main loop in a timeout.
 /// \return TRUE, to continue the timeout.
 gboolean checkInfrarouge()
 {
+	if(robot_disableIR)
+	{
+		robot_IRDetectionBack = FALSE;
+		robot_IRDetectionFront = FALSE;
+		return TRUE;
+	}
 	// The IR results are compared to a threshold, resulting in a true/false evalution.
 	// A counter then accesses that n identical boolean of the same value have been recieved: once this is the case,
 	// the value of the robot_IRDetection variable changes.
-	const int N_CONSECUTIVE = 2;
+	const int N_CONSECUTIVE = 3;
 	static int frontCounter = 1, backCounter = 1;
 	static gboolean oldSensorValueBack = FALSE, oldSensorValueFront = FALSE;
 
@@ -43,18 +57,22 @@ gboolean checkInfrarouge()
 		backCounter ++;
 	else
 		backCounter = 1;
-	if(backCounter >= N_CONSECUTIVE)
-		robot_IRDetectionBack = sensorValue;
+	if(backCounter >= N_CONSECUTIVE && sensorValue == TRUE)
+		robot_IRDetectionBack = TRUE;
+	else
+		robot_IRDetectionBack = FALSE;
 	oldSensorValueBack = sensorValue;
 
 	sensorValue = (gpio_analogRead(CAPE_ANALOG[2]) > IR_FRONT_THRESHOLD) ||
-	              (gpio_analogRead(CAPE_ANALOG[5]) * 1.5 > IR_FRONT_THRESHOLD);
+	              (gpio_analogRead(CAPE_ANALOG[5]) * 1.3 > IR_FRONT_THRESHOLD);
 	if(sensorValue == oldSensorValueFront)
 		frontCounter ++;
 	else
 		frontCounter = 1;
-	if(frontCounter >= N_CONSECUTIVE)
-		robot_IRDetectionFront = sensorValue;
+	if(frontCounter >= N_CONSECUTIVE && sensorValue == TRUE)
+		robot_IRDetectionFront = TRUE;
+	else
+		robot_IRDetectionFront = FALSE;
 	oldSensorValueFront = sensorValue;
 
 	// Turn on red led if we see something on any sensor.
@@ -256,6 +274,7 @@ gboolean waitForStart(gboolean isInitDone)
 				lcd_setBacklight(robotLCD, FALSE, TRUE, FALSE);
 			}
 		}
+		checkInfrarouge();
 		g_usleep(50000);
 	}
 	return isRightSide;
@@ -298,7 +317,9 @@ int main(int argc, char **argv)
 	g_thread_new("Localisation", localisation_start, NULL);
 
 	// Timeout functions to check on the infrared sensors.
+	robot_disableIR = TRUE;
 	g_timeout_add(15, checkInfrarouge, NULL);
+	g_timeout_add(1500, enableIR, NULL);
 	// Run glib main loop.
     g_main_loop_run(loop);
 	return 0;

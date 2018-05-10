@@ -80,6 +80,8 @@
 	gboolean robot_isOnRightSide;
 	extern gboolean robot_disableIRWater;
 
+	///< TRUE to temporary disable IR.
+	extern gboolean robot_disableIR;
 
 	///< Servo actions. Note that these functions do not wait for the servo action to be done.
 	static inline void servo_openWaterTank()

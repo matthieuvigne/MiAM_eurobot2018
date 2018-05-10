@@ -191,7 +191,7 @@ void *strategy_runMatch()
 	{
 		servo_openWaterTank();
 		robot_disableIRWater = TRUE;
-		targetPosition.x = BALL_LENGTH_OFFSET + 100 - 15;
+		targetPosition.x = BALL_LENGTH_OFFSET + 100 - 20;
 		stopOnSwitch = TRUE;
 		motionSucessful = motion_goTo(targetPosition, TRUE, TRUE);
 		stopOnSwitch = FALSE;
