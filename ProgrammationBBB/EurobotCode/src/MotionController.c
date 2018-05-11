@@ -2,12 +2,12 @@
 #include "MotionController.h"
 
 // Max robotMotors speed and acceleration, in half counts / s.
-const int MOTOR_MAX_SPEED = 700;
+const int MOTOR_MAX_SPEED = 690;
 const int MOTOR_MAX_ACCELERATION = 500;
 
 // Motor current profile constants, for the 42BYGHW810 robotMotors, 2.0A - these values are computed using ST dSPIN utility.
-const int MOTOR_KVAL_HOLD = 0x29;
-const int MOTOR_BEMF[4] = {0x3E, 0x172D, 0xD, 0x39};
+const int MOTOR_KVAL_HOLD = 0x25;
+const int MOTOR_BEMF[4] = {0x36, 0x172E, 0xC, 0x33};
 
 
 // Generic implementation of a PID controller.
@@ -169,7 +169,7 @@ gboolean checkSensor(gboolean backward)
 	if(robotViewpoint.x < 0 || robotViewpoint.x > 3000 || robotViewpoint.y < 0 || robotViewpoint.y > 2000)
 		return FALSE;
 	// Ignore bottom ball catcher.
-	if((robotViewpoint.x < 900 && robotViewpoint.x > 400) && robotViewpoint.y > 1720)
+	if((robotViewpoint.x < 900 && robotViewpoint.x > 400) && robotViewpoint.y > 1800)
 		return FALSE;
 	if(robotViewpoint.x < 500 && (robotViewpoint.y > 500 && robotViewpoint.y < 1000))
 		return FALSE;
@@ -235,7 +235,7 @@ void motion_setVelocityProfile(int maxSpeed, int maxAccel, int maxDecel)
 
 void motion_resetVelocityProfile()
 {
-	motion_setVelocityProfile(MOTOR_MAX_SPEED, MOTOR_MAX_ACCELERATION, 1.9 * MOTOR_MAX_ACCELERATION);
+	motion_setVelocityProfile(MOTOR_MAX_SPEED, MOTOR_MAX_ACCELERATION, 1.6 * MOTOR_MAX_ACCELERATION);
 }
 
 gboolean motion_translate(double distance, gboolean readSensor)
@@ -271,10 +271,10 @@ gboolean motion_translate(double distance, gboolean readSensor)
 			// An obstacle has been seen: stop the motors (in semi-hard fashion: leave 0.5s for deceleration then stop).
 			printf("Obstacle seen, stopping\n");
 			motion_stopMotors();
-			g_usleep(250000);
+			g_usleep(100000);
 			motion_stopMotorsHard();
-			// Wait at most 3.5s for the robot to go away.
-			g_usleep(4000000);
+			// Wait at most 3s for the robot to go away.
+			g_usleep(3000000);
 
 			//~ GTimer *waitTimer = g_timer_new();
 			//~ g_timer_start(waitTimer);

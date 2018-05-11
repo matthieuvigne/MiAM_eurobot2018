@@ -16,18 +16,24 @@
 #include "MotionController.h"
 #include "Localisation.h"
 #include "Strategy.h"
+#include "Strategy.h"
 
 
 // Sensor value threshold to consider a valid detection.
-const int IR_FRONT_THRESHOLD = 800;
-const int IR_BACK_THRESHOLD = 800;
+const int IR_FRONT_THRESHOLD = 850;
+const int IR_BACK_THRESHOLD = 850;
+
+# define AVR_WIN 10
+int frontIR[2][AVR_WIN];
+int backIR[2][AVR_WIN];
 
 gboolean robot_disableIRWater = FALSE;
-gboolean robot_disableIR = FALSE;
+gboolean robot_disableIROnStartup = FALSE;
+GIOChannel *irLogFile = NULL;
 
 gboolean enableIR()
 {
-	robot_disableIR = FALSE;
+	robot_disableIROnStartup = FALSE;
 	return FALSE;
 }
 
@@ -36,7 +42,7 @@ gboolean enableIR()
 /// \return TRUE, to continue the timeout.
 gboolean checkInfrarouge()
 {
-	if(robot_disableIR)
+	if(robot_disableIROnStartup)
 	{
 		robot_IRDetectionBack = FALSE;
 		robot_IRDetectionFront = FALSE;
@@ -49,10 +55,32 @@ gboolean checkInfrarouge()
 	static int frontCounter = 1, backCounter = 1;
 	static gboolean oldSensorValueBack = FALSE, oldSensorValueFront = FALSE;
 
-	gboolean sensorValue = gpio_analogRead(CAPE_ANALOG[4]) > IR_BACK_THRESHOLD;
-	if(!robot_disableIRWater)
-		sensorValue |= gpio_analogRead(CAPE_ANALOG[3]) > IR_BACK_THRESHOLD;
+	int backRight = gpio_analogRead(CAPE_ANALOG[3]);
+	int backLeft = gpio_analogRead(CAPE_ANALOG[4]);
 
+	for(int i = 1; i < AVR_WIN; i++)
+	{
+		backIR[0][i-1] = backIR[0][i];
+		backIR[1][i-1] = backIR[1][i];
+	}
+	backIR[0][AVR_WIN-1] = backRight;
+	backIR[1][AVR_WIN-1] = backLeft;
+	double backRightAverage = 0, backLeftAverage = 0;
+	for(int i = 0; i < AVR_WIN; i++)
+	{
+		backRightAverage += backIR[0][i];
+		backLeftAverage += backIR[1][i];
+	}
+	backRightAverage /= (float)(AVR_WIN);
+	backLeftAverage /= (float)(AVR_WIN);
+
+	gboolean sensorValue = backLeftAverage > IR_BACK_THRESHOLD;
+	// Disable this IR sensor given that the water-opening arm is in front of it in this position.
+	if(!robot_disableIRWater)
+		sensorValue |= backRightAverage > IR_BACK_THRESHOLD;
+
+	robot_IRDetectionBack = sensorValue;
+	/*
 	if(sensorValue == oldSensorValueBack)
 		backCounter ++;
 	else
@@ -62,9 +90,31 @@ gboolean checkInfrarouge()
 	else
 		robot_IRDetectionBack = FALSE;
 	oldSensorValueBack = sensorValue;
+	*/
 
-	sensorValue = (gpio_analogRead(CAPE_ANALOG[2]) > IR_FRONT_THRESHOLD) ||
-	              (gpio_analogRead(CAPE_ANALOG[5]) * 1.3 > IR_FRONT_THRESHOLD);
+	int frontRight = gpio_analogRead(CAPE_ANALOG[2]);
+	int frontLeft = gpio_analogRead(CAPE_ANALOG[5]) * 1.1;
+
+
+	for(int i = 1; i < AVR_WIN; i++)
+	{
+		frontIR[0][i-1] = frontIR[0][i];
+		frontIR[1][i-1] = frontIR[1][i];
+	}
+	frontIR[0][AVR_WIN-1] = frontRight;
+	frontIR[1][AVR_WIN-1] = frontLeft;
+	double frontRightAverage = 0, frontLeftAverage = 0;
+	for(int i = 0; i < AVR_WIN; i++)
+	{
+		frontRightAverage += frontIR[0][i];
+		frontLeftAverage += frontIR[1][i];
+	}
+	frontRightAverage /= (float)(AVR_WIN);
+	frontLeftAverage /= (float)(AVR_WIN);
+
+	sensorValue = (frontRightAverage > IR_FRONT_THRESHOLD) ||
+	              (frontLeftAverage > IR_FRONT_THRESHOLD);
+	/*
 	if(sensorValue == oldSensorValueFront)
 		frontCounter ++;
 	else
@@ -74,12 +124,23 @@ gboolean checkInfrarouge()
 	else
 		robot_IRDetectionFront = FALSE;
 	oldSensorValueFront = sensorValue;
-
+	*/
+	robot_IRDetectionFront = sensorValue;
 	// Turn on red led if we see something on any sensor.
 	if(robot_IRDetectionBack || robot_IRDetectionFront)
 		gpio_digitalWrite(CAPE_LED[1], 1);
 	else
 		gpio_digitalWrite(CAPE_LED[1], 0);
+	// Log results.
+	//~ if(irLogFile != NULL)
+	//~ {
+		//~ gchar *line = g_strdup_printf("%d,%d,%d,%d,%d,%d,%f,%f,%f,%f\n", frontRight, frontLeft, backRight, backLeft,
+		                                                     //~ robot_IRDetectionFront, robot_IRDetectionBack,
+		                                                     //~ frontRightAverage, frontLeftAverage, backRightAverage, backLeftAverage);
+		//~ g_io_channel_write_chars(irLogFile, line, -1, NULL, NULL);
+		//~ g_io_channel_flush (irLogFile, NULL);
+		//~ g_free(line);
+	//~ }
 	return TRUE;
 }
 
@@ -216,7 +277,6 @@ gboolean waitForStart(gboolean isInitDone)
 
 	gboolean motorReleased = TRUE;
 	motion_releaseMotors();
-	//~ gboolean closed = FALSE;
 	while(gpio_digitalRead(CAPE_DIGITAL[0]) == 0)
 	{
 		if(!isInitDone)
@@ -232,17 +292,12 @@ gboolean waitForStart(gboolean isInitDone)
 				lcd_setText(robotLCD, "Ready to start", 0);
 			}
 		}
+
 		if(lcd_isButtonPressed(robotLCD, LCD_BUTTON_RIGHT))
 		{
 			oldSide = isRightSide;
 			isRightSide = TRUE;
 		}
-
-		//~ if(!closed && lcd_isButtonPressed(robotLCD, LCD_BUTTON_UP))
-		//~ {
-			//~ servo_closeClaws();
-			//~ closed = TRUE;
-		//~ }
 
 		if(lcd_isButtonPressed(robotLCD, LCD_BUTTON_LEFT))
 		{
@@ -292,7 +347,7 @@ int main(int argc, char **argv)
 	gboolean initDone = initRobot();
 	// Wait for match to start, redoing motor init if previously failed.
 	robot_isOnRightSide = waitForStart(initDone);
-	//~ robot_isOnRightSide = TRUE;
+	//~ robot_isOnRightSide = FALSE;
 	//~ servo_closeClaws();
 
 	// Start match, set timer to 100s.
@@ -316,9 +371,24 @@ int main(int argc, char **argv)
 	g_thread_new("Strategy", strategy_runMatch, NULL);
 	g_thread_new("Localisation", localisation_start, NULL);
 
+	// Create IR log file
+	gchar *date = g_date_time_format(g_date_time_new_now_local(), "%Y%m%dT%H%M%SZ");
+	gchar *filename = g_strdup_printf("logIR%s.csv", date);
+	irLogFile = g_io_channel_new_file(filename, "w", NULL);
+	gchar *line = g_strdup_printf("IR Log: %s\n", date);
+	g_free(date);
+	g_free(filename);
+
+	g_io_channel_write_chars(irLogFile, line, -1, NULL, NULL);
+	g_io_channel_flush (irLogFile, NULL);
+	g_free(line);
+
+	g_io_channel_write_chars(irLogFile, "frontRight,frontLeft,backRight,backLeft,frontStatus,backStatus,frontRightFiltered,frontLeftFiltered,backRightFiltered,backLeftFiltered\n", -1, NULL, NULL);
+	g_io_channel_flush (irLogFile, NULL);
+
 	// Timeout functions to check on the infrared sensors.
-	robot_disableIR = TRUE;
-	g_timeout_add(15, checkInfrarouge, NULL);
+	robot_disableIROnStartup = TRUE;
+	g_timeout_add(10, checkInfrarouge, NULL);
 	g_timeout_add(1500, enableIR, NULL);
 	// Run glib main loop.
     g_main_loop_run(loop);

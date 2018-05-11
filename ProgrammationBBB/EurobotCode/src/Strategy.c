@@ -23,7 +23,8 @@ void throwBalls()
 {
 	servo_ballDirectionCanon();
 	servo_startCannon();
-	g_usleep(1000000);
+	servo_ballPusherDown();
+	g_usleep(1200000);
 	for(int i=0; i < 8; i++)
 	{
 		servo_millTurn();
@@ -32,9 +33,10 @@ void throwBalls()
 		g_usleep(300000);
 		servo_millTurnBackward();
 		g_usleep(80000);
-
-		//~ servo_millTurnBackward();
-		//~ g_usleep(200000);
+		if(i % 4 == 0)
+			servo_ballPusherDown();
+		if(i % 4 == 2)
+			servo_ballPusherUp();
 	}
 	servo_stopCannon();
 	servo_millStop();
@@ -86,11 +88,10 @@ void *strategy_runMatch()
 	robot_setScore(robotScore);
 	servo_middleWaterTank();
 
-	//~ servo_openClaws();
-	//~ g_usleep(2000000);
-	//~ servo_closeClaws();
-	//~ while(TRUE);
-
+	//~ motion_translate(1500, FALSE);
+	//~ motion_translate(-1500, FALSE);
+	//~ while(TRUE) ;;
+	//~ throwBalls();
 	// Go turn on light swith.
 	targetPosition.x = 1130 + 30;
 	motion_goTo(targetPosition, FALSE, TRUE);
@@ -115,7 +116,7 @@ void *strategy_runMatch()
 	servo_clawUp();
 
 	targetPosition.x = robot_getPositionX();
-	targetPosition.y = CHASSIS_FRONT - 25;
+	targetPosition.y = CHASSIS_FRONT - 30;
 	motion_goTo(targetPosition, FALSE, TRUE);
 	resetPosition.y = CHASSIS_FRONT;
 	resetPosition.theta = G_PI_2;
@@ -168,9 +169,9 @@ void *strategy_runMatch()
 		else
 		{
 			servo_beeLaunch();
-			g_usleep(800000);
+			g_usleep(950000);
 			motion_translate(-10, TRUE);
-			g_usleep(300000);
+			g_usleep(700000);
 		}
 		g_usleep(500000);
 		servo_beeRetract();
@@ -184,7 +185,7 @@ void *strategy_runMatch()
 
 	// Go grab the balls, ignore the cubes.
 	targetPosition.x = 930;
-	targetPosition.y = 840 + BALL_WIDTH_OFFSET - 30;
+	targetPosition.y = 840 + BALL_WIDTH_OFFSET - 20;
 	motionSucessful = motion_goTo(targetPosition, FALSE, TRUE);
 	// Go further than what is supposed to, stop at contact
 	if(motionSucessful)
@@ -199,18 +200,19 @@ void *strategy_runMatch()
 
 		if(motionSucessful)
 		{
-			motion_translate(20, FALSE);
+			motion_translate(10, FALSE);
 			gatherWater(TRUE);
 			robotScore += 10;
 			robot_setScore(robotScore);
-			motion_translate(60, TRUE);
+			motion_translate(70, TRUE);
 			if(robot_isOnRightSide)
-				motion_rotate(G_PI_2);
+				motion_rotate(G_PI_2 + 0.05);
 			else
 				motion_rotate(G_PI_2 + 0.2);
+			motion_translate(50, TRUE);
 			throwBalls();
 			// Number of points scored by throwing the balls: 5points / ball.
-			robotScore += 5;
+			robotScore += 3;
 			robot_setScore(robotScore);
 		}
 	}
@@ -222,7 +224,7 @@ void *strategy_runMatch()
 	motion_goTo(targetPosition, FALSE, TRUE);
 	targetPosition.x = 810;
 	targetPosition.y = CHASSIS_FRONT + 180 - 20;
-	motion_setVelocityProfile(700, 300, 800);
+	motion_setVelocityProfile(700, 400, 800);
 	motionSucessful = motion_goTo(targetPosition, FALSE, TRUE);
 	motion_resetVelocityProfile();
 	if(motionSucessful)
@@ -253,18 +255,18 @@ void *strategy_runMatch()
 	if(motionSucessful)
 		motionSucessful = motion_translate(-80, TRUE);
 
-	targetPosition.x = 570;
+	targetPosition.x = 560;
 	targetPosition.y = CHASSIS_FRONT + 180 - 30;
 	if(motionSucessful)
 	{
-		motion_setVelocityProfile(700, 300, 800);
+		motion_setVelocityProfile(700, 400, 800);
 		motionSucessful = motion_goTo(targetPosition, FALSE, TRUE);
 		motion_resetVelocityProfile();
 	}
 
 	if(motionSucessful)
 	{
-		robotScore += 4;
+		robotScore += 2;
 		robot_setScore(robotScore);
 	}
 	printf("Strategy ended\n");

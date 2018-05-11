@@ -97,7 +97,7 @@
 
 	static inline void servo_closeWaterTank()
 	{
-		maestro_setPosition(robotServo, 0, 975);
+		maestro_setPosition(robotServo, 0, 900);
 	}
 
 	static inline void servo_ballDirectionCenter()
@@ -163,7 +163,7 @@
 
 	static inline void servo_startCannon()
 	{
-		maestro_setPosition(robotServo, 13, 1850);
+		maestro_setPosition(robotServo, 13, 1750);
 	}
 
 	static inline void servo_stopCannon()
@@ -178,7 +178,7 @@
 
 	static inline void servo_beeLaunch()
 	{
-		maestro_setPosition(robotServo, 14, 2480);
+		maestro_setPosition(robotServo, 14, 2495);
 	}
 
 	static inline void servo_clawUp()
@@ -204,6 +204,15 @@
 		maestro_setPosition(robotServo, 4, 1280);
 	}
 
+	static inline void servo_ballPusherUp()
+	{
+		maestro_setPosition(robotServo, 15, 510);
+	}
+
+	static inline void servo_ballPusherDown()
+	{
+		maestro_setPosition(robotServo, 15, 1700);
+	}
 	/// Send all servos to initial position.
 	static inline void servo_initPosition()
 	{
@@ -224,12 +233,13 @@
 		servo_trayDown();
 		servo_stopCannon();
 		// Bee servo speed
-		maestro_setSpeed(robotServo, 14, 700);
+		maestro_setSpeed(robotServo, 14, 610);
 		servo_beeRetract();
 		maestro_setSpeed(robotServo, 3, 800);
 		maestro_setSpeed(robotServo, 4, 800);
 		servo_clawUp();
 		servo_middleWaterTank();
+		servo_ballPusherUp();
 		//~ servo_openClaws();
 	}
  #endif
