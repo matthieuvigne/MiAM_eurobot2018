@@ -48,13 +48,7 @@ gboolean checkInfrarouge()
 		robot_IRDetectionFront = FALSE;
 		return TRUE;
 	}
-	// The IR results are compared to a threshold, resulting in a true/false evalution.
-	// A counter then accesses that n identical boolean of the same value have been recieved: once this is the case,
-	// the value of the robot_IRDetection variable changes.
-	const int N_CONSECUTIVE = 3;
-	static int frontCounter = 1, backCounter = 1;
-	static gboolean oldSensorValueBack = FALSE, oldSensorValueFront = FALSE;
-
+	// Get IR values, filter them using a moving average, then update variable and led status accordingly.
 	int backRight = gpio_analogRead(CAPE_ANALOG[3]);
 	int backLeft = gpio_analogRead(CAPE_ANALOG[4]);
 
@@ -80,17 +74,6 @@ gboolean checkInfrarouge()
 		sensorValue |= backRightAverage > IR_BACK_THRESHOLD;
 
 	robot_IRDetectionBack = sensorValue;
-	/*
-	if(sensorValue == oldSensorValueBack)
-		backCounter ++;
-	else
-		backCounter = 1;
-	if(backCounter >= N_CONSECUTIVE && sensorValue == TRUE)
-		robot_IRDetectionBack = TRUE;
-	else
-		robot_IRDetectionBack = FALSE;
-	oldSensorValueBack = sensorValue;
-	*/
 
 	int frontRight = gpio_analogRead(CAPE_ANALOG[2]);
 	int frontLeft = gpio_analogRead(CAPE_ANALOG[5]) * 1.1;
@@ -114,17 +97,7 @@ gboolean checkInfrarouge()
 
 	sensorValue = (frontRightAverage > IR_FRONT_THRESHOLD) ||
 	              (frontLeftAverage > IR_FRONT_THRESHOLD);
-	/*
-	if(sensorValue == oldSensorValueFront)
-		frontCounter ++;
-	else
-		frontCounter = 1;
-	if(frontCounter >= N_CONSECUTIVE && sensorValue == TRUE)
-		robot_IRDetectionFront = TRUE;
-	else
-		robot_IRDetectionFront = FALSE;
-	oldSensorValueFront = sensorValue;
-	*/
+
 	robot_IRDetectionFront = sensorValue;
 	// Turn on red led if we see something on any sensor.
 	if(robot_IRDetectionBack || robot_IRDetectionFront)
@@ -217,6 +190,7 @@ gboolean initRobot()
 	}
 	isInitSuccessful &= initMouse;
 
+	// Color sensor is unsused in this version of the code.
 	//~ gboolean initColor = colorSensor_init(&robotColorSensor, &I2C_1);
 	//~ if(!initColor)
 	//~ {

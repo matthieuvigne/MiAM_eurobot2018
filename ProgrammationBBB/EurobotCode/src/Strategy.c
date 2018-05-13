@@ -57,8 +57,6 @@ void gatherWater(gboolean sameColor)
 	g_usleep(250000);
 	motion_translate(-15, FALSE);
 	g_usleep(500000);
-	//~ motion_shake(25);
-	//~ motion_shake(-25);
 	motion_translate(20, FALSE);
 	motion_translate(-20, FALSE);
 	motion_resetVelocityProfile();
@@ -88,10 +86,6 @@ void *strategy_runMatch()
 	robot_setScore(robotScore);
 	servo_middleWaterTank();
 
-	//~ motion_translate(1500, FALSE);
-	//~ motion_translate(-1500, FALSE);
-	//~ while(TRUE) ;;
-	//~ throwBalls();
 	// Go turn on light swith.
 	targetPosition.x = 1130 + 30;
 	motion_goTo(targetPosition, FALSE, TRUE);

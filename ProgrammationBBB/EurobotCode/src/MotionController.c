@@ -273,20 +273,9 @@ gboolean motion_translate(double distance, gboolean readSensor)
 			motion_stopMotors();
 			g_usleep(100000);
 			motion_stopMotorsHard();
-			// Wait at most 3s for the robot to go away.
+			// Wait 3s for the robot to go away.
 			g_usleep(3000000);
 
-			//~ GTimer *waitTimer = g_timer_new();
-			//~ g_timer_start(waitTimer);
-			//~ int nNoRobotSeen = 2;
-			//~ while(g_timer_elapsed(waitTimer, NULL) < 3.5 && nNoRobotSeen > 0)
-			//~ {
-				//~ if(checkSensor(distance < 0))
-					//~ nNoRobotSeen = 2;
-				//~ else
-					//~ nNoRobotSeen--;
-				//~ g_usleep(100000);
-			//~ }
 			// If there is still an obstacle, abort.
 			if(checkSensor(distance < 0))
 			{
@@ -369,8 +358,6 @@ gboolean motion_rotate(double motionAngle)
 		double trajectoryPosition, trajectoryVelocity;
 		rotationTrajectory(motionAngle, currentTime, &trajectoryPosition, &trajectoryVelocity);
 		trajectoryPosition += startAngle;
-		//~ trajectoryPosition = startAngle + motionAngle;
-		//~ trajectoryVelocity = 0;
 		// Compute PID command
 		double command = PID_computeValue(&rotationPID,
 		                                  currentPosition - trajectoryPosition,
