@@ -1,0 +1,164 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[english]{babel}
+\usepackage{hyperref}
+\usepackage{listings}
+ 
+
+%listings settings
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  frame=leftline,
+  rulecolor=\color{red},
+  framerule=2pt,
+  xleftmargin=15pt,
+  breaklines=true
+}
+
+
+\hypersetup{
+  colorlinks   = true, %Colours links instead of ugly boxes
+  urlcolor     = blue, %Colour for external hyperlinks
+  linkcolor    = black, %Colour of internal links
+  citecolor   = black %Colour of citations
+}
+
+\title{Cross-compilation environment setup.}
+\author{Matthieu Vigne}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\section{Introduction}
+
+\par This guide explains how to setup a cross-compilation environment on a Linux PC (Fedora or Debian/Ubunu) to compile our code, i.e. the BBBEurobot library. This setup works for compiling code to a Beaglebone Black, and to a Raspberry Pi as well.
+Three things are needed to cross-compile this code:
+
+ - a C compiler targeting the \emph{armhf} platform, called \textbf{gcc-arm-linux-gnueabihf}.
+ 
+ - a cross-compiled version of the glib, used by our code.
+ 
+ - a renamed \emph{pkg-config} file to load the cross-compiled glib when compiling.
+ 
+\section{Debian setup}
+
+These instructions were tested on Debian 8 (Jessie) in 2015. The setup for Ubuntu is probably quite similar.
+
+Setup on Debian is quite fast, as the official repo already have the compiler and a cross-compiled glib. The only step needed is to tell \emph{apt} to add the arm platform, then install the packages as usual:
+
+\begin{lstlisting}[]
+sudo dpkg --add-architecture armhf
+sudo apt-get update
+sudo apt-get install gcc-arm-linux-gnueabihf
+sudo apt-get install libglib2.0-dev:armhf
+\end{lstlisting}
+
+Now everything is installed, but there is one last setup step needed: link to the \emph{pkg-config} file of the glib. Since it has the same name as the one installed for your system library version, we will rename it to prevent any conflict. To keep things clear, I advise you modify (freely) the \emph{Name:} and \emph{Description:} fields of this file, \emph{/usr/lib/arm-linux-gnueabihf/pkgconfig/glib-2.0.pc} though for instance the following command:
+
+\begin{lstlisting}
+sudo nano /usr/lib/arm-linux-gnueabihf/pkgconfig/glib-2.0.pc
+\end{lstlisting}
+
+Then, simply copy this file to the default \emph{pkg-config} search path, renaming it:
+
+\begin{lstlisting}[]
+sudo mv /usr/lib/arm-linux-gnueabihf/pkgconfig/glib-2.0.pc /usr/share/pkgconfig/armglib-2.0.pc
+\end{lstlisting}
+
+To check that everything works correctly, type:
+
+\begin{lstlisting}[]
+pkg-config --list-all | grep arm
+\end{lstlisting}
+
+This should give you the \emph{armglib-2.0} library, with the name and description you previously entered.
+
+\section{Fedora setup}
+
+These instructions were tested in Febuary 2018 on Fedora 27.
+
+Contrary to Debian, the official Fedora repo do not contain either the compiler nor the cross-compiled glib. We will get the compiler from an unofficial Copr repo, and then cross-compile the glib from source.
+
+First, install the compiler and cross-compiled glibc (for basic C functions: this is a dependency of glib) using:
+
+\begin{lstlisting}
+sudo dnf copr enable lantw44/arm-linux-gnueabihf-toolchain
+sudo dnf install arm-linux-gnueabihf-gcc arm-linux-gnueabihf-glibc
+\end{lstlisting}
+
+In order to compile the glib, we must first install its dependencies.
+
+The firs is libffi: get the latest version from  \href{https://sourceware.org/libffi/}{https://sourceware.org/libffi/} (v 3.2.1 in Febuary 2018), decompress it, then run from the source folder:
+
+\begin{lstlisting}[]
+./configure --host=arm-linux-gnueabihf --prefix=/usr/arm-linux-gnueabihf/sys-root/
+make
+sudo make install
+\end{lstlisting}
+
+The first line configures the build, telling the system to cross-compile the library using the cross-compiler instead of system gcc, and to install it in \emph{/usr/arm-linux-gnueabihf/sys-root/}, the path used on install of the compiler and glibc. Then we compile and install the library.
+
+\emph{Note: for faster compilation, you can append \emph{-jN} to the make instruction, where N is the number of process being run in parallel.}
+
+The second dependancy is the zlib (\href{http://www.zlib.net/}{http://www.zlib.net/}, v 1.2.11 in Febuary 2018), installed with the same process:
+\begin{lstlisting}[]
+CC=arm-linux-gnueabihf-gcc ./configure --prefix=/usr/arm-linux-gnueabihf/sys-root/
+make
+sudo make install
+\end{lstlisting}
+
+Finally, download the glib \href{http://ftp.gnome.org/pub/GNOME/sources/glib/}{http://ftp.gnome.org/\\pub/GNOME/sources/glib/} (v 2.55.1 in Febuary 2018). Go to the parent of the source directory (i.e. where you uncompressed the archive), create a build folder, in which we place a config file \emph{arm.cache}:
+
+\begin{lstlisting}
+mkdir build
+cd build
+gedit arm.cache
+\end{lstlisting}
+
+Copy the following content in \emph{arm.cache}:
+\begin{lstlisting}[caption= File arm.cache]
+glib_cv_long_long_format=ll
+glib_cv_stack_grows=no
+glib_cv_uscore=yes
+ac_cv_func_posix_getpwuid_r=no
+ac_cv_func_posix_getgrgid_r=no
+LIBFFI_CFLAGS="-I/usr/arm-linux-gnueabihf/sys-root/lib/libffi-3.2.1/include"
+LIBFFI_LIBS="-L/usr/arm-gnueabihf/sys-root/lib -lffi"
+ZLIB_CFLAGS="-I/usr/arm-linux-gnueabihf/sys-root/include"
+ZLIB_LIBS="-L/usr/arm-linux-gnueabihf/sys-root/lib -lz"
+\end{lstlisting}
+
+Now, configure the build using the given \emph{arm.cache}:
+
+\begin{lstlisting}[]
+../glib-2.55.1/configure --host=arm-linux-gnueabihf --prefix=/usr/arm-linux-gnueabihf/sys-root/ --cache-file=./arm.cache --with-pcre --enable-libmount=no
+make
+sudo make install
+\end{lstlisting}
+
+Comments: the option --with-pcre tells the configuration script to use internally-package pcre library. --enable-libmount=no disables libmount, a library used for disk mounting that we won't be using on the Beaglebone, and hence that wasn't installed (it can otherwise be installed using the same process as before).
+
+Now everything is installed, but there is one last setup step needed: link to the \emph{pkg-config} file of the glib. Since it has the same name as the one installed for your system library version, we will rename it to prevent any conflict. To keep things clear, I advise you modify (freely) the \emph{Name:} and \emph{Description:} fields of this file, \emph{/usr/arm-linux-gnueabihf/sys-root/lib/pkgconfig/glib-2.0.pc} though for instance the following command:
+
+\begin{lstlisting}
+sudo nano /usr/arm-linux-gnueabihf/sys-root/lib/pkgconfig/glib-2.0.pc
+\end{lstlisting}
+
+Then, simply copy this file to the default \emph{pkg-config} search path, renaming it:
+
+\begin{lstlisting}[]
+sudo mv /usr/arm-linux-gnueabihf/sys-root/lib/pkgconfig/glib-2.0.pc /usr/share/pkgconfig/armglib-2.0.pc
+\end{lstlisting}
+
+To check that everything works correctly, type:
+
+\begin{lstlisting}[]
+pkg-config --list-all | grep arm
+\end{lstlisting}
+
+This should give you the \emph{armglib-2.0} library, with the name and description you previously entered.
+
+\end{document}
