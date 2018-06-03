@@ -231,14 +231,14 @@ uint32_t L6470_getError(L6470 l)
     GString *errorMessage = g_string_new(NULL);
 
 	// Not perf cmd is active high, not active low.
-    if((status & dSPIN_STATUS_NOTPERF_CMD) == 1)
+    if((status & dSPIN_STATUS_NOTPERF_CMD) != 0)
     {
 		error |= dSPIN_ERR_NOEXEC;
 		g_string_append(errorMessage, "Cmd no exec ");
 	}
 
 	// Wrong cmd is active high, not active low.
-    if((status & dSPIN_STATUS_WRONG_CMD) == 1)
+    if((status & dSPIN_STATUS_WRONG_CMD) != 0)
     {
 		error |= dSPIN_ERR_BADCMD;
 		g_string_append(errorMessage, "Bad cmd ");

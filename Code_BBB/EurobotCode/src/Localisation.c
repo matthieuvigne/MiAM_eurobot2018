@@ -38,17 +38,17 @@ void *localisation_start()
 									  "mouseX,mouseY,currentX,currentY,currentTheta\n", -1, NULL, NULL);
 	g_io_channel_flush (logFile, NULL);
 
+	// Create metronome
+	Metronome metronome = metronome_create(LOOP_PERIOD * 1e9);
+	double currentTime = 0;
+	double lastTime = 0;
+
 	// Create kalman filter.
 	Kalman kalmanFilter;
 	kalman_init(&kalmanFilter, robot_getPositionTheta());
-	// Start timer and enter update loop.
-	GTimer *localisationTimer = g_timer_new();
-	double lastTime = 0;
-	double lastLoop = 0;
-	double currentTime = 0;
+
 	int oldEncoder[2] = {0,0};
 
-	g_timer_start(localisationTimer);
 	while(TRUE)
 	{
 		// Reset position, if asked for.
@@ -65,6 +65,11 @@ void *localisation_start()
 				kalman_init(&kalmanFilter, positionReset.theta);
 			}
 		}
+
+		// Wait for next tick.
+		lastTime = currentTime;
+		metronome_wait(&metronome);
+		currentTime = metronome_getTimeElapsed(metronome);
 
 		// Get sensor data
 		int encoder[2];
@@ -83,10 +88,7 @@ void *localisation_start()
 		double mouseX = 0, mouseY = 0;
 		//~ ADNS9800_getMotion(robotMouseSensor, &mouseX, &mouseY);
 
-		currentTime = g_timer_elapsed(localisationTimer, NULL);
 		double dt = currentTime - lastTime;
-		lastTime = currentTime;
-
 		// Estimate new position.
 		RobotPosition currentPosition = robot_getPosition();
 		// Estimate angle.
@@ -119,15 +121,6 @@ void *localisation_start()
 		g_io_channel_write_chars(logFile, line, -1, NULL, NULL);
 		g_io_channel_flush (logFile, NULL);
 		g_free(line);
-
-		// Wait for time to match loop frequency.
-		currentTime = g_timer_elapsed(localisationTimer, NULL);
-		while(currentTime - lastLoop < LOOP_PERIOD)
-		{
-			g_usleep(10);
-			currentTime = g_timer_elapsed(localisationTimer, NULL);
-		}
-		lastLoop = currentTime;
 	}
 	return 0;
 }

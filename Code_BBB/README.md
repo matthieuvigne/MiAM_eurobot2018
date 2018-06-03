@@ -23,7 +23,7 @@ Thus, to cross-compile this code, one needs:
  - a C cross compiler targeting arm platforms.
  - the glib-2.0 library, cross-compiled.
 
-To obtain this, you may do you own setup, or follow the provided guide in SetupCrossCompilation.pdf.
+To obtain this, you may do you own setup, or follow the provided guide in ARMCrossCompilationSetup.pdf.
 
 *Note: this identical setup can be used for cross-compiling C code to a Raspberry Pi, as it is also an arm processor.*
 

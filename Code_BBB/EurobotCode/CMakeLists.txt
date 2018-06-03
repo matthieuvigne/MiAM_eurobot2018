@@ -8,7 +8,7 @@ set(PROJECT_DESCRIPTION "Eurobot competition code")
 set(CMAKE_C_COMPILER "arm-linux-gnueabihf-gcc")
 
 # Set C compiler flags.
-set(CMAKE_C_FLAGS "-std=gnu99 -Wall -fdiagnostics-color -lpthread -lm")
+set(CMAKE_C_FLAGS "-std=gnu99 -Wall -fdiagnostics-color -lpthread -lm -lrt")
 
 
 # Use pkg-config to find external libraries : Glib (compiled for arm) and BBBEurobot.
@@ -18,7 +18,7 @@ unset(ARMGLIB_FOUND CACHE)
 pkg_search_module(ARMGLIB REQUIRED armglib-2.0>=2.47.0)
 message(STATUS "Found armglib-2.0 v." ${ARMGLIB_VERSION})
 unset(BBBLIB_FOUND CACHE)
-pkg_search_module(BBBLIB REQUIRED BBBEurobot>=1.0)
+pkg_search_module(BBBLIB REQUIRED BBBEurobot>=1.3)
 message(STATUS "Found BBBEurobot v." ${BBBLIB_VERSION})
 
 include_directories(${ARMGLIB_INCLUDE_DIRS} ${BBBLIB_INCLUDE_DIRS})
